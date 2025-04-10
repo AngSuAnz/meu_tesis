@@ -1,7 +1,7 @@
 ---
-title: "CABA Vecinal"
+title: "Diferencias en el acceso a la ciudad desde un barrio formal/informal"
 description: |
-  La Ciudad Autónoma de Buenos Aires en 15 minutos
+  Caso de estudio: Barrio Padre Carlos Mugica y su entorno formal
 ---
 
 
@@ -67,11 +67,7 @@ knitr::opts_chunk$set(
 ```
 
 
-La ya conocida teoría de las "Ciudades de 15 minutos", término acuñado por Carlos Moreno [(2016)](https://www.latribune.fr/regions/smart-cities/la-tribune-de-carlos-moreno/la-ville-du-quart-d-heure-pour-un-nouveau-chrono-urbanisme-604358.html), cuenta ya con 7 años de "popularidad", en los que ha generado un intenso debate con partidarios y detractores apasionados.
-
-Si bien la teoría y los conceptos que presenta no son nuevos, ya que han sido tratados previamente por Clarence Perry [(1929)](https://www.taylorfrancis.com/chapters/edit/10.4324/9780429261732-66/neighborhood-unit-clarence-perry), Jane Jacobs [(1961)](https://books.google.com.ar/books/about/Muerte_y_vida_de_las_grandes_ciudades.html?id=fWQeEAAAQBAJ&source=kp_book_description&redir_esc=y), Carmen Belloni [(1984)](https://pascal-francis.inist.fr/vibad/index.php?action=getRecordDetail&idt=6512313),y Sandra Bonfiglioli [(1997)](https://journals.sagepub.com/doi/10.1177/102425899700300405), entre otros; la temática ha recobrado relevancia en el contexto actual luego del gran impacto que ha tenido la pandemia por COVID 19.
-
-Por esa razón, este estudio se propone analizar los datos disponibles de la Ciudad Autónoma de Buenos Aires para evaluar en qué medida puede ser considerada una "ciudad de 15 minutos", una **Ciudad Vecinal**.
+Acá hago una intro épica para mi tema de tesis.
 
 
 <h2>
@@ -79,8 +75,7 @@ Por esa razón, este estudio se propone analizar los datos disponibles de la Ciu
   <small class="text-muted"> |  Metodología de investigación </small>
 </h2>
 
-Para llevar esto a cabo, conformé una muestra territorial, tomando un punto aleatorio dentro de cada barrio de la Ciudad de Buenos Aires.
-A partir de estos puntos, construí una isocrona definida a 15minutos a pie y tomé esas porciones del territorio como las áreas a estudiar.
+Para llevar esto a cabo, conformé una muestra territorial, tomando un punto aleatorio dentro de cada ...
 
 <details><summary> Código </summary> 
 ```{r }
