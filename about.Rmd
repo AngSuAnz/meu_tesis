@@ -4,8 +4,8 @@ description: |
   Información adicional
 ---
 
-**Docentes** | Juan Pablo Ruiz Nicolini, Pablo Tiscornia
+**Director de tesis** | xxx
 
-**Alumna**   | Ángeles Suarez Anzorena
+**Alumna**            | Ángeles Suarez Anzorena
 
-**UTDT**     | MEU 2023
+**UTDT**              | Maestría en Economía Urbana

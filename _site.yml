@@ -1,7 +1,7 @@
-name: "IAUII_TRABAJO_FINAL"
-title: "IAUII_FINAL"
+name: "UTDT-MEU"
+title: "MEU_TESIS"
 description: |
-  IAUII_FINAL
+  Tesis Maestría en Economía Urbana
 output_dir: "docs"
 navbar:
   type: inverse

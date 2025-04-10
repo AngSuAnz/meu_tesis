@@ -1,7 +1,7 @@
 ---
-title: "Instrumentos de Análisis Urbano II"
+title: "UTDT-Maestría en Economía Urbana"
 description: |
-  Trabajo Final
+  Tesis-Trabajo Final
 site: distill::distill_website
 ---
 
