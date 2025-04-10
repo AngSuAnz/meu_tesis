@@ -23,3 +23,7 @@ navbar:
   - icon: fab fa-github
     href: https://github.com/AngSuAnz/IAUII_TRABAJO_FINAL
   - search: true
+
+output:
+  distill::distill_article:
+    css: "custom_style.css"
