@@ -1,0 +1,54 @@
+---
+title: "Fuentes"
+description: |
+  Origen de la información y referencias
+---
+
+```{r, include=FALSE}
+options(scipen = 999)
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library(data.table)
+library(dplyr)
+library(DT)
+library(googlesheets4)
+library(stringr)
+library(tidygeocoder)
+library(tidyr)
+library(tidyverse)
+```
+
+Aclaración inicial: me embarqué muy contenta en esta empresa y con medio tp ya desarrollado encontré este [hermoso trabajo](https://buenosaires.gob.ar/publicaciones-de-informacion-territorial/indice-de-cobertura-de-las-necesidades-de-la-vida) que básicamente hace lo que yo quería, pero mil veces mejor, así que lo tomé como referencia en algunos puntos, pero me propuse de todas maneras seguir construyendo mi propio camino.
+
+<h3>
+  Bases de Datos </br>
+  <small class="text-muted"> |  Identificación, fuentes y observaciones </small>
+</h3>
+
+```{r,echo = FALSE, warning=FALSE}
+gs4_deauth() # Eliminar auth interactivo (link publico)
+variable = read_sheet("https://docs.google.com/spreadsheets/d/15K_hQPI8NeN-vGZoND9f9yWvzg82VgPx-S1nffsJ3LQ/edit#gid=0")
+
+
+datatable(variable, 
+          style = 'bootstrap', 
+          class = 'cell-border stripe',
+          options = list(
+            searching = FALSE,
+            rownames = FALSE,
+            pageLength = 10,
+            dom = 't',
+            scrollY = '300px',
+            language = list(zeroRecords = "No existen datos para los requerimientos seleccionados"),
+            #autoWidth = TRUE,
+      columnDefs = list(
+        list(targets = 0, visible = FALSE)
+          )))
+
+```
+
+<h3>
+  Bibliografía </br>
+  <small class="text-muted"> |  Textos y videos </small>
+</h3>
