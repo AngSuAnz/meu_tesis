@@ -1,18 +1,10 @@
 ---
-title: "meu_tesis_suareza"
+title: "Instrumentos de Análisis Urbano II"
 description: |
-  Welcome to the website. I hope you enjoy it!
+  Trabajo Final
 site: distill::distill_website
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+El presente trabajo responde a las consignas de los docentes Juan Pablo Ruiz Nicolini (TuQ) y Pablo Tiscornia, para evaluar lo aprendido durante el curso de Instrumentos de Análisis Urbano II, dictado en la Maestría en Economía Urbana de la Universidad Torcuato Di Tella.
 
-# Learn more about creating websites with Distill at:
-# https://rstudio.github.io/distill/website.html
-
-# Learn more about publishing to GitHub Pages at:
-# https://rstudio.github.io/distill/publish_website.html#github-pages
-
-```
-
+[Página de Referencia](https://tuqmano.github.io/geo_utdt/tp_2.html)
