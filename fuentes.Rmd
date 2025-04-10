@@ -28,7 +28,7 @@ Aclaración inicial: me embarqué muy contenta en esta empresa y con medio tp ya
 
 ```{r,echo = FALSE, warning=FALSE}
 gs4_deauth() # Eliminar auth interactivo (link publico)
-variable = read_sheet("https://docs.google.com/spreadsheets/d/15K_hQPI8NeN-vGZoND9f9yWvzg82VgPx-S1nffsJ3LQ/edit#gid=0")
+variable = read_sheet("https://docs.google.com/spreadsheets/d/1CDcdDusEITzpHqGDRrmKG2aO6NmuicmkN8eFmAwMh7c/edit?gid=1618341109#gid=1618341109", sheet = "BDD")
 
 
 datatable(variable, 
