@@ -7,7 +7,6 @@ output:
     toc: false
     number_sections: false
     code_folding: hide
-    css: custom_style.css
 editor_options: 
   chunk_output_type: console
 ---
