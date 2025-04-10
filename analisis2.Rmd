@@ -2,6 +2,14 @@
 title: "Diferencias en el acceso a la ciudad desde un barrio formal/informal"
 description: |
   Caso de estudio: Barrio Padre Carlos Mugica y su entorno formal
+output: 
+  html_document:
+    toc: false
+    number_sections: false
+    code_folding: hide
+    css: custom_style.css
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r librerias, include=FALSE}
@@ -94,13 +102,6 @@ $(document).ready(function() {
   initTableSettings();
 });
 </script>
-
-
-## BKK FIRMUS </br><small class="text-muted"> || Database from forms</small> {.tabset}
-
-<a name="top"></a> <!-- Anchor at the top of the document -->
-<a class="top-link" href="#top">↑</a> <!-- Floating "Back to Top" button -->
-
 
 
 Acá hago una intro épica para mi tema de tesis.
