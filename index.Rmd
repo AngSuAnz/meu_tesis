@@ -2,9 +2,6 @@
 title: "UTDT-Maestría en Economía Urbana"
 description: |
   Tesis-Trabajo Final
-site: distill::distill_website
 ---
 
-El presente trabajo responde a las consignas de los docentes Juan Pablo Ruiz Nicolini (TuQ) y Pablo Tiscornia, para evaluar lo aprendido durante el curso de Instrumentos de Análisis Urbano II, dictado en la Maestría en Economía Urbana de la Universidad Torcuato Di Tella.
-
-[Página de Referencia](https://tuqmano.github.io/geo_utdt/tp_2.html)
+site: distill::distill_website
