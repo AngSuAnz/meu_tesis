@@ -1,0 +1,171 @@
+---
+title: "Diferencias en el acceso a la ciudad desde un barrio formal/informal"
+description: |
+  Caso de estudio: Barrio Padre Carlos Mugica y su entorno formal
+output: 
+  html_document:
+    toc: false
+    number_sections: false
+    theme: flatly
+    code_folding: hide
+    css: custom_style.css
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r librerias, include=FALSE}
+
+options(scipen = 999)
+
+library(bootstrap)
+library(bslib)
+library(data.table)
+library(dplyr)
+library(DT)
+library(geofacet)
+library(ggmap)
+library(ggplot2)
+library(googlesheets4)
+library(installr)
+library(janitor)
+library(knitr)
+library(leaflet)
+library(leaflet.extras)
+library(lubridate)
+library(lwgeom)
+library(maptools)
+library(openxlsx)
+library(osmdata)
+library(osrm)
+library(plotly)
+library(purrr)
+library(RColorBrewer)
+library(readxl)
+library(readr)
+library(rgdal)
+library(rgeos)
+library(rmarkdown)
+library(rsconnect)
+library(scales)
+library(sf)
+#library(shiny)
+#library(shinydashboard)
+#library(shinyjs)
+library(sodium)
+library(sp)
+library(stringr)
+library(tidygeocoder)
+library(tidyr)
+library(tidyverse)
+library(viridis)
+library(viridisLite)
+library(vroom)
+library(writexl)
+
+#In RStudio, you can render your site locally (knit + preview all .Rmd files in one fell swoop). Se puede escribir en la consola: rmarkdown::render_site()  SIEMPRE HACER ESTO PARA IMPACTAR LOS CAMBIOS EN EL SITIO!
+
+```
+
+```{r exclude_false, include=FALSE}
+knitr::opts_chunk$set(
+  comment =FALSE,
+  #fig.width = 6, fig.height = 6, 
+  message=FALSE, warning=FALSE
+)
+```
+
+```{r, include=FALSE}
+gotop::use_gotop(
+  src = "fas fa-chevron-circle-up", # css class from Font Awesome
+  color = "tomato", # color
+  opacity = 0.8, # transparency
+  width = 30, # size
+  appear = 100 # number of pixels before appearance
+  )
+```
+<script>
+function initTableSettings() {
+  $('.searchable-table').each(function () {  // Only apply to tables with "searchable-table" class
+    var table = $(this).DataTable();
+    table.columns().every(function () {
+      var column = this;
+      var header = $(column.header());
+      var input = $('<br><input type="text" placeholder="Filter" style="width: 75%;"/>').appendTo(header).on('keyup change', function () {
+        if (column.search() !== this.value) {
+          column.search(this.value).draw();
+        }
+      });
+    });
+  });
+}
+
+$(document).ready(function() {
+  initTableSettings();
+});
+</script>
+
+
+## BKK FIRMUS </br><small class="text-muted"> || Database from forms</small> {.tabset}
+
+<a name="top"></a> <!-- Anchor at the top of the document -->
+<a class="top-link" href="#top">↑</a> <!-- Floating "Back to Top" button -->
+
+
+
+Acá hago una intro épica para mi tema de tesis.
+
+
+<h2>
+  PRIMER PASO </br>
+  <small class="text-muted"> |  Metodología de investigación </small>
+</h2>
+
+Para llevar esto a cabo, conformé una muestra territorial, tomando un punto aleatorio dentro de cada ...
+
+<details><summary> Código </summary> 
+```{r }
+
+ciudad = st_read("https://cdn.buenosaires.gob.ar/datosabiertos/datasets/ministerio-de-educacion/perimetro/perimetro.geojson") %>% 
+  #mutate(AREAKM2 = round((AREA/1000000),2)) %>% 
+  st_transform(4326)#%>%
+  #arrange(BARRIO)
+
+colectivos_paradas = st_read("https://cdn.buenosaires.gob.ar/datosabiertos/datasets/transporte-y-obras-publicas/colectivos-paradas/paradas-de-colectivo.geojson") %>% 
+  #mutate(AREAKM2 = round((AREA/1000000),2)) %>% 
+  st_transform(4326)#%>%
+  #arrange(BARRIO)
+
+
+espacios_verdes = st_read("https://cdn.buenosaires.gob.ar/datosabiertos/datasets/secretaria-de-desarrollo-urbano/espacios-verdes/espacio_verde_publico.geojson") %>% 
+  st_make_valid() 
+
+#eevv_unido = st_union(mb_eevv)
+
+
+# RESTO LAS GEOMETRIAS DE ESPACIOS VERDES A LOS BARRIOS PARA QUE CUANDO GENERE LOS PUNTOS ALEATORIOS, NO CAIGAN AHÍ (Restar geometria2 de geometria1):
+
+#barrios_sverde = st_difference(barrios, eevv_unido) 
+
+#LO GUARDO Y LO LLAMO PARA NO REPETIR:
+
+#barrios_sverde = st_read("data/barrios_sverde.geojson")
+
+#GENERO Y GUARDO LOS PTOS ALEATORIOS PORQUE SINO CADA VEZ QUE CORRO EL CODIGO, SON NUEVOS:
+
+#puntos_aleatoriossv <- rowwise(barrios_sverde) %>%
+#  mutate(punto_aleatorio = st_sample(geometry, 1, type = "random")) %>% 
+#  st_drop_geometry(geometry) %>% 
+#  st_as_sf()
+
+#st_write(puntos_aleatoriossv, "data/nuevos_puntos.geojson")
+
+#puntos_aleatorios = st_read("data/nuevos_puntos.geojson")
+
+```
+</details>
+
+
+
+
+
+
