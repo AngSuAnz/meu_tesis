@@ -6,7 +6,6 @@ output:
   html_document:
     toc: false
     number_sections: false
-    theme: flatly
     code_folding: hide
     css: custom_style.css
 editor_options: 
