@@ -2,6 +2,8 @@
 title: "Diferencias en el acceso a la ciudad desde un barrio formal/informal"
 description: |
   Caso de estudio: Barrio Padre Carlos Mugica y su entorno formal
+
+---
 output: 
   html_document:
     toc: false
@@ -10,8 +12,7 @@ output:
     css: custom_style.css
 editor_options: 
   chunk_output_type: console
----
-
+  
 ```{r librerias, include=FALSE}
 
 options(scipen = 999)
