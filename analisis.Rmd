@@ -1,0 +1,131 @@
+---
+title: "CABA Vecinal"
+description: |
+  La Ciudad Autónoma de Buenos Aires en 15 minutos
+---
+
+
+```{r librerias, include=FALSE}
+
+options(scipen = 999)
+
+library(bootstrap)
+library(bslib)
+library(data.table)
+library(dplyr)
+library(DT)
+library(geofacet)
+library(ggmap)
+library(ggplot2)
+library(googlesheets4)
+library(installr)
+library(janitor)
+library(knitr)
+library(leaflet)
+library(leaflet.extras)
+library(lubridate)
+library(lwgeom)
+library(maptools)
+library(openxlsx)
+library(osmdata)
+library(osrm)
+library(plotly)
+library(purrr)
+library(RColorBrewer)
+library(readxl)
+library(readr)
+library(rgdal)
+library(rgeos)
+library(rmarkdown)
+library(rsconnect)
+library(scales)
+library(sf)
+#library(shiny)
+#library(shinydashboard)
+#library(shinyjs)
+library(sodium)
+library(sp)
+library(stringr)
+library(tidygeocoder)
+library(tidyr)
+library(tidyverse)
+library(viridis)
+library(viridisLite)
+library(vroom)
+library(writexl)
+
+#In RStudio, you can render your site locally (knit + preview all .Rmd files in one fell swoop). Se puede escribir en la consola: rmarkdown::render_site()  SIEMPRE HACER ESTO PARA IMPACTAR LOS CAMBIOS EN EL SITIO!
+
+```
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(
+  comment =FALSE,
+  #fig.width = 6, fig.height = 6, 
+  message=FALSE, warning=FALSE
+)
+```
+
+
+La ya conocida teoría de las "Ciudades de 15 minutos", término acuñado por Carlos Moreno [(2016)](https://www.latribune.fr/regions/smart-cities/la-tribune-de-carlos-moreno/la-ville-du-quart-d-heure-pour-un-nouveau-chrono-urbanisme-604358.html), cuenta ya con 7 años de "popularidad", en los que ha generado un intenso debate con partidarios y detractores apasionados.
+
+Si bien la teoría y los conceptos que presenta no son nuevos, ya que han sido tratados previamente por Clarence Perry [(1929)](https://www.taylorfrancis.com/chapters/edit/10.4324/9780429261732-66/neighborhood-unit-clarence-perry), Jane Jacobs [(1961)](https://books.google.com.ar/books/about/Muerte_y_vida_de_las_grandes_ciudades.html?id=fWQeEAAAQBAJ&source=kp_book_description&redir_esc=y), Carmen Belloni [(1984)](https://pascal-francis.inist.fr/vibad/index.php?action=getRecordDetail&idt=6512313),y Sandra Bonfiglioli [(1997)](https://journals.sagepub.com/doi/10.1177/102425899700300405), entre otros; la temática ha recobrado relevancia en el contexto actual luego del gran impacto que ha tenido la pandemia por COVID 19.
+
+Por esa razón, este estudio se propone analizar los datos disponibles de la Ciudad Autónoma de Buenos Aires para evaluar en qué medida puede ser considerada una "ciudad de 15 minutos", una **Ciudad Vecinal**.
+
+
+<h2>
+  PRIMER PASO </br>
+  <small class="text-muted"> |  Metodología de investigación </small>
+</h2>
+
+Para llevar esto a cabo, conformé una muestra territorial, tomando un punto aleatorio dentro de cada barrio de la Ciudad de Buenos Aires.
+A partir de estos puntos, construí una isocrona definida a 15minutos a pie y tomé esas porciones del territorio como las áreas a estudiar.
+
+<details><summary> Código </summary> 
+```{r }
+
+ciudad = st_read("https://cdn.buenosaires.gob.ar/datosabiertos/datasets/ministerio-de-educacion/perimetro/perimetro.geojson") %>% 
+  #mutate(AREAKM2 = round((AREA/1000000),2)) %>% 
+  st_transform(4326)#%>%
+  #arrange(BARRIO)
+
+colectivos_paradas = st_read("https://cdn.buenosaires.gob.ar/datosabiertos/datasets/transporte-y-obras-publicas/colectivos-paradas/paradas-de-colectivo.geojson") %>% 
+  #mutate(AREAKM2 = round((AREA/1000000),2)) %>% 
+  st_transform(4326)#%>%
+  #arrange(BARRIO)
+
+
+espacios_verdes = st_read("https://cdn.buenosaires.gob.ar/datosabiertos/datasets/secretaria-de-desarrollo-urbano/espacios-verdes/espacio_verde_publico.geojson") %>% 
+  st_make_valid() 
+
+#eevv_unido = st_union(mb_eevv)
+
+
+# RESTO LAS GEOMETRIAS DE ESPACIOS VERDES A LOS BARRIOS PARA QUE CUANDO GENERE LOS PUNTOS ALEATORIOS, NO CAIGAN AHÍ (Restar geometria2 de geometria1):
+
+#barrios_sverde = st_difference(barrios, eevv_unido) 
+
+#LO GUARDO Y LO LLAMO PARA NO REPETIR:
+
+#barrios_sverde = st_read("data/barrios_sverde.geojson")
+
+#GENERO Y GUARDO LOS PTOS ALEATORIOS PORQUE SINO CADA VEZ QUE CORRO EL CODIGO, SON NUEVOS:
+
+#puntos_aleatoriossv <- rowwise(barrios_sverde) %>%
+#  mutate(punto_aleatorio = st_sample(geometry, 1, type = "random")) %>% 
+#  st_drop_geometry(geometry) %>% 
+#  st_as_sf()
+
+#st_write(puntos_aleatoriossv, "data/nuevos_puntos.geojson")
+
+#puntos_aleatorios = st_read("data/nuevos_puntos.geojson")
+
+```
+</details>
+
+
+
+
+
+
