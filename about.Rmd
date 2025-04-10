@@ -1,10 +1,11 @@
 ---
-title: "About this site"
+title: "+Info"
 description: |
-  Some additional details about the website
+  Información adicional
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
-```
+**Docentes** | Juan Pablo Ruiz Nicolini, Pablo Tiscornia
 
+**Alumna**   | Ángeles Suarez Anzorena
+
+**UTDT**     | MEU 2023
