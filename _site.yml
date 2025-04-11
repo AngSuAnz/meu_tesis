@@ -11,8 +11,8 @@ navbar:
   left: 
   - text: "Inicio" 
     href: index.html
-  - text: "Caso de Estudio2" 
-    href: analisis2.html
+  - text: "Caso de Estudio" 
+    href: analisis.html
   right:
   - text: "+Info"
     menu:
