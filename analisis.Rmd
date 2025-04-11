@@ -4,7 +4,6 @@ description: |
   Caso de estudio: Barrio Padre Carlos Mugica y su entorno formal
 ---
 
-
 ```{r librerias, include=FALSE}
 
 options(scipen = 999)
@@ -58,13 +57,43 @@ library(writexl)
 
 ```
 
-```{r, include=FALSE}
+```{r exclude_false, include=FALSE}
 knitr::opts_chunk$set(
   comment =FALSE,
   #fig.width = 6, fig.height = 6, 
   message=FALSE, warning=FALSE
 )
 ```
+
+```{r, include=FALSE}
+gotop::use_gotop(
+  src = "fas fa-chevron-circle-up", # css class from Font Awesome
+  color = "tomato", # color
+  opacity = 0.8, # transparency
+  width = 30, # size
+  appear = 100 # number of pixels before appearance
+  )
+```
+<script>
+function initTableSettings() {
+  $('.searchable-table').each(function () {  // Only apply to tables with "searchable-table" class
+    var table = $(this).DataTable();
+    table.columns().every(function () {
+      var column = this;
+      var header = $(column.header());
+      var input = $('<br><input type="text" placeholder="Filter" style="width: 75%;"/>').appendTo(header).on('keyup change', function () {
+        if (column.search() !== this.value) {
+          column.search(this.value).draw();
+        }
+      });
+    });
+  });
+}
+
+$(document).ready(function() {
+  initTableSettings();
+});
+</script>
 
 
 Acá hago una intro épica para mi tema de tesis.
@@ -75,52 +104,173 @@ Acá hago una intro épica para mi tema de tesis.
   <small class="text-muted"> |  Metodología de investigación </small>
 </h2>
 
-Para llevar esto a cabo, conformé una muestra territorial, tomando un punto aleatorio dentro de cada ...
+Tomo el polígono del barrio Padres Carlos Mugica y el de la ciudad de Buenos Aires.
+
+
 
 <details><summary> Código </summary> 
+
+```{r}
+#ESPACIOS VERDES Y BARRIOS POPULARES. nO CREO QUE NECESITE ESTO POR AHORA.
+
+#LLAMO LOS ESPACIOS VERDES, PERO UNA SOLA VEZ PORQUE LOS VOY A MODIFICAR Y GUARDAR ASÍ PARA NO TENER QUE REPETIR ESTE PASO:
+#espacios_verdes = st_read("https://cdn.buenosaires.gob.ar/datosabiertos/datasets/secretaria-de-desarrollo-urbano/espacios-verdes/espacio_verde_publico.geojson") %>% 
+#  st_make_valid() 
+
+#Unifico todos los polígonos de espacios verdes en un solo multipoligono
+#espacios_verdes = st_union(espacios_verdes)
+
+#espacios_verdes = espacios_verdes %>% 
+#  st_make_valid()
+
+#barrios_populares = st_read("data/barrios_vulnerables.shp")%>% 
+#  st_transform(4326)%>% 
+#  st_make_valid()
+
+#barrios_populares = st_union(barrios_populares) %>% 
+#  st_make_valid()%>%
+#  st_sf()
+
+# RESTO LAS GEOMETRIAS DE ESPACIOS VERDES A LOS BARRIOS PARA QUE CUANDO GENERE LOS PUNTOS ALEATORIOS, NO CAIGAN AHÍ (Restar geometria2 de geometria1):
+#ciudad_cfiltro = st_difference(ciudad, barrios_populares)
+
+
+#LO GUARDO Y LO LLAMO PARA NO REPETIR:
+#st_write(ciudad_s_verde,"data/ciudad_sverde.geojson")
+```
+
 ```{r }
 
 ciudad = st_read("https://cdn.buenosaires.gob.ar/datosabiertos/datasets/ministerio-de-educacion/perimetro/perimetro.geojson") %>% 
   #mutate(AREAKM2 = round((AREA/1000000),2)) %>% 
-  st_transform(4326)#%>%
+  st_transform(4326)%>% 
+  st_make_valid()#%>%
   #arrange(BARRIO)
 
 colectivos_paradas = st_read("https://cdn.buenosaires.gob.ar/datosabiertos/datasets/transporte-y-obras-publicas/colectivos-paradas/paradas-de-colectivo.geojson") %>% 
-  #mutate(AREAKM2 = round((AREA/1000000),2)) %>% 
-  st_transform(4326)#%>%
-  #arrange(BARRIO)
+  st_transform(4326)
+
+b_mugica = st_read("data/poligono_ley.shp") %>%
+  st_zm() %>%  # drop Z dimension (required for some operations)
+  st_cast("POLYGON") %>%
+  st_transform(4326) %>%
+  mutate(area_km2 = as.numeric(st_area(geometry)) / 1e6)
 
 
-espacios_verdes = st_read("https://cdn.buenosaires.gob.ar/datosabiertos/datasets/secretaria-de-desarrollo-urbano/espacios-verdes/espacio_verde_publico.geojson") %>% 
-  st_make_valid() 
-
-#eevv_unido = st_union(mb_eevv)
-
-
-# RESTO LAS GEOMETRIAS DE ESPACIOS VERDES A LOS BARRIOS PARA QUE CUANDO GENERE LOS PUNTOS ALEATORIOS, NO CAIGAN AHÍ (Restar geometria2 de geometria1):
-
-#barrios_sverde = st_difference(barrios, eevv_unido) 
-
-#LO GUARDO Y LO LLAMO PARA NO REPETIR:
-
-#barrios_sverde = st_read("data/barrios_sverde.geojson")
+#LLAMO A LOS SECTORES DEL BARRIO MUGICA PARA QUE LA DISTRIBUCIÓN DE LOS PUNTOS ALEATORIOS ESTÉ MÁS DISTRIBUIDA. TODA ESTA PARTE LA HAGO UNA SOLA VEZ.
+#b_mugica_sectores = st_read("data/sector.shp")
 
 #GENERO Y GUARDO LOS PTOS ALEATORIOS PORQUE SINO CADA VEZ QUE CORRO EL CODIGO, SON NUEVOS:
-
-#puntos_aleatoriossv <- rowwise(barrios_sverde) %>%
+#puntos_aleatorios_bm <- rowwise(b_mugica_sectores) %>%
 #  mutate(punto_aleatorio = st_sample(geometry, 1, type = "random")) %>% 
 #  st_drop_geometry(geometry) %>% 
 #  st_as_sf()
 
-#st_write(puntos_aleatoriossv, "data/nuevos_puntos.geojson")
+#GUARDO LOS PUNTOS PARA LLAMARLOS DESPUES:
+#st_write(puntos_aleatorios_bm, "data/puntos_aleatorios_bm.geojson")
 
-#puntos_aleatorios = st_read("data/nuevos_puntos.geojson")
+#LLAMO A LOS PUNTOS ALEATORIOS GUARDADOS DEL BARRIO MUGICA:
+puntos_aleatorios_bm = st_read("data/puntos_aleatorios_bm.geojson")
+
+
+#EDITO EL POLIGONO DE LA CIUDAD PARA DESCONTARLE EL BARRIO:
+ciudad_cfiltro = st_difference(ciudad, b_mugica)
+
+ggplot(ciudad_cfiltro) +
+  geom_sf()
 
 ```
 </details>
 
+Creo un buffer en torno al barrio mugica, calculo su area y la divido por el área del barrio, lo que me da como resultado, la cantidad de poligonos lindantes que puedo sacar de la misma area.
+
+Buffer de 2500m.
+Área buffer/0.725 km2 (área aproximada del barrio) = n
+
+```{r}
+# 2. Create a buffer around b_mugica (adjust distance as needed)
+b_buffer <- st_buffer(b_mugica, dist = 2500) #dist in meters
+
+b_buffer <- st_intersection(b_buffer, ciudad_cfiltro)
+
+ggplot(b_buffer) +
+  geom_sf()
+
+# 3. Calculate how many ~0.725 km² polygons fit into the buffer
+buffer_area <- as.numeric(st_area(b_buffer)) / 1e6  # in km²
+n_polygons <- round(buffer_area / 0.725)
+
+```
+
+Con ese número, genero n puntos aleatorios dentro del buffer y a partir de ellos creo areas con voronoi.
+
+```{r}
+# Sample points
+sample_pts <- st_sample(b_buffer, size = n_polygons, type = "random")
+
+# Voronoi split
+voronoi <- st_voronoi(do.call(c, st_geometry(sample_pts))) %>%
+  st_collection_extract("POLYGON") %>%
+  st_sf(geometry = .)
+st_crs(voronoi) <- st_crs(b_buffer)
+
+# Clip to usable area
+split_zones = st_intersection(voronoi, b_buffer) %>%
+  select(area,geometry) %>% 
+  mutate(area_km2 = as.numeric(st_area(geometry))/ 1e6) %>% 
+  arrange(desc(area_km2)) %>% 
+  slice(1:20)
+
+split_zones <- split_zones %>%
+  mutate(number = row_number())
+
+ggplot(split_zones) +
+  geom_sf()
+
+#st_write(split_zones, "data/split_zones3.geojson")
+
+```
+
+Como resultado tengo las areas circundantes aleatorias en torno al barrio.
+Como algunos sectores son predominantemente no residenciales, excluyo esos.
+Para hacerlo superpongo las geometrías al mapa satelital para evidenciar lo que sucede en el territorio.
+Además tengo en cuenta cuán parecidas son las areas de los poligonos al área del barrio (0.725km2)
+
+```{r}
+mapa_sectores_proximos =
+leaflet(st_zm(ciudad)) %>%
+  addTiles() %>%
+  addProviderTiles(providers$CartoDB.Positron, group = "OSM",
+                   options = providerTileOptions(minzoom = 1, maxzoom = 15)) %>%
+  addProviderTiles(providers$Esri.WorldImagery, group = "Satelite") %>%
+  addLayersControl(
+    baseGroups = c("Satelite","OSM"), 
+    overlayGroups = c("Sectores próximos","Barrio Mugica"))%>% 
+  
+  addPolygons(data= split_zones,
+              color = "black",
+              weight = 0.4,
+              opacity = 0.7,
+              fillColor = "white",
+              fillOpacity = 0.4,
+              popup = ~paste("<strong> AREA KM2: </strong>", round(area_km2, 3), "km2", "km²<br><strong>ID:</strong>", number),
+              group = "Sectores próximos") %>% 
+  
+  addPolygons(data= b_mugica,
+              color = "black",
+              weight = 0.4,
+              opacity = 0.7,
+              fillColor = "white",
+              fillOpacity = 0.4,
+              popup = ~paste("<strong>AREA KM2:</strong>", round(area_km2, 3)),
+              group = "Barrio Mugica")
+
+mapa_sectores_proximos
+```
 
 
+ggplot(b_mugica_sectores) +
+  geom_sf()
 
 
 
