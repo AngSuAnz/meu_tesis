@@ -7,11 +7,11 @@ output:
     toc: false
     number_sections: false
     code_folding: hide
-    css: custom_style.css
-editor_options: 
-  chunk_output_type: console
 ---
 
+editor_options: 
+  chunk_output_type: console
+  
 ```{r librerias, include=FALSE}
 
 options(scipen = 999)
@@ -118,7 +118,7 @@ Tomo el polígono del barrio Padres Carlos Mugica y el de la ciudad de Buenos Ai
 
 <details><summary> Código </summary> 
 
-```{r, echo=FALSE, out.width='75%', fig.align='left', fig.height = 7}
+```{r, echo=FALSE, out.width='75%', fig.align='left', fig.height = 5}
 #ESPACIOS VERDES Y BARRIOS POPULARES. nO CREO QUE NECESITE ESTO POR AHORA.
 
 #LLAMO LOS ESPACIOS VERDES, PERO UNA SOLA VEZ PORQUE LOS VOY A MODIFICAR Y GUARDAR ASÍ PARA NO TENER QUE REPETIR ESTE PASO:
@@ -147,7 +147,7 @@ Tomo el polígono del barrio Padres Carlos Mugica y el de la ciudad de Buenos Ai
 #st_write(ciudad_s_verde,"data/ciudad_sverde.geojson")
 ```
 
-```{r, echo=FALSE, out.width='75%', fig.align='left', fig.height = 7}
+```{r, echo=FALSE, out.width='75%', fig.align='left', fig.height = 5}
 
 ciudad = st_read("https://cdn.buenosaires.gob.ar/datosabiertos/datasets/ministerio-de-educacion/perimetro/perimetro.geojson") %>% 
   #mutate(AREAKM2 = round((AREA/1000000),2)) %>% 
@@ -158,12 +158,13 @@ ciudad = st_read("https://cdn.buenosaires.gob.ar/datosabiertos/datasets/minister
 colectivos_paradas = st_read("https://cdn.buenosaires.gob.ar/datosabiertos/datasets/transporte-y-obras-publicas/colectivos-paradas/paradas-de-colectivo.geojson") %>% 
   st_transform(4326)
 
-b_mugica = st_read("data/poligono_ley.shp") %>%
-  st_zm() %>%  # drop Z dimension (required for some operations)
-  st_cast("POLYGON") %>%
+b_mugica_sectores = st_read("data/sector.shp")
+
+b_mugica <- st_buffer(st_union(b_mugica_sectores), 0.5) %>%
+  st_sf() %>%  # convert to sf object with geometry column
   st_transform(4326) %>%
   mutate(area_km2 = as.numeric(st_area(geometry)) / 1e6)
-
+  
 #EDITO EL POLIGONO DE LA CIUDAD PARA DESCONTARLE EL BARRIO:
 ciudad_cfiltro = st_difference(ciudad, b_mugica)
 
@@ -178,12 +179,13 @@ Creo un buffer en torno al barrio mugica, calculo su area y la divido por el ár
 Buffer de 2500m.
 Área buffer/0.725 km2 (área aproximada del barrio) = n
 
-```{r, echo=FALSE, out.width='75%', fig.align='left', fig.height = 7}
+```{r, echo=FALSE, out.width='75%', fig.align='left', fig.height = 5}
 # CREO UN BUFFER EN TORNO AL BARRIO MUGICA
-b_buffer <- st_buffer(b_mugica, dist = 2500) #dist in meters
+b_buffer <- st_buffer(b_mugica, dist = 1500) #distancia en metros
 
 #INTERSECCIONO EL BUFFER CON LOS LIMITES DE LA CIUDAD
-b_buffer <- st_intersection(b_buffer, ciudad_cfiltro)
+b_buffer <- st_intersection(b_buffer, ciudad_cfiltro) %>% 
+  st_transform(32721)
 
 ggplot(b_buffer) +
   geom_sf()
@@ -191,13 +193,15 @@ ggplot(b_buffer) +
 
 Con ese número, genero n puntos aleatorios dentro del buffer y a partir de ellos creo areas con voronoi.
 
-```{r, echo=FALSE, out.width='75%', fig.align='left', fig.height = 7}
+```{r, echo=FALSE, out.width='75%', fig.align='left', fig.height = 5}
+#ESTA PARTE TAMBIÉN LA EJECUTO UNA SOLA VEZ, PORQUE LOS POLIGONOS VORONOI EN BASE A LOS PUNTOS VARÍAN CON CADA CORRIDA SINO. PARA SIMPLIFICAR EL PROCESO LOS GUARDO Y LOS LLAMO.
+
 # CALCULO CUANTOS PUNTOS ME ENTRAN EN EL BUFFER
 buffer_area <- as.numeric(st_area(b_buffer)) / 1e6  # in km²
-n_polygons <- round(buffer_area / 0.725)
+n_polygons <- round(buffer_area / 0.604)
 
 #GENERO ESA CANTIDAD DE PUNTOS ALEATORIOS
-sample_pts <- st_sample(b_buffer, size = n_polygons, type = "random")
+sample_pts <- st_sample(b_buffer, size = n_polygons, type = "hexagonal")
 
 #HAGO LAS PARTICIONES CON VORONOI EN BASE A LOS PUNTOS
 voronoi <- st_voronoi(do.call(c, st_geometry(sample_pts))) %>%
@@ -209,23 +213,23 @@ st_crs(voronoi) <- st_crs(b_buffer)
 split_zones = st_intersection(voronoi, b_buffer) %>%
   select(area,geometry) %>% 
   mutate(area_km2 = as.numeric(st_area(geometry))/ 1e6) %>% 
-  arrange(desc(area_km2)) %>% 
-  slice(1:20)
-
-split_zones <- split_zones %>%
-  mutate(number = row_number())
+  arrange(desc(area_km2))
 
 ggplot(split_zones) +
   geom_sf()
 
-#st_write(split_zones, "data/split_zones3.geojson")
+st_write(split_zones, "data/split_zones15.geojson")
 
+sectores_proximos = st_read("data/split_zones15.geojson") %>%  
+  st_transform(4326) %>% 
+  st_make_valid() %>% 
+  mutate(numero = row_number())
 ```
 
 Como resultado tengo las areas circundantes aleatorias en torno al barrio.
 Como algunos sectores son predominantemente no residenciales, excluyo esos.
 Para hacerlo superpongo las geometrías al mapa satelital para evidenciar lo que sucede en el territorio.
-Además tengo en cuenta cuán parecidas son las areas de los poligonos al área del barrio (0.725km2)
+Además tengo en cuenta cuán parecidas son las areas de los poligonos al área del barrio (0.604km2)
 
 ```{r, echo=FALSE, out.width='75%', fig.align='left', fig.height = 7}
 mapa_sectores_proximos =
@@ -236,22 +240,66 @@ leaflet(st_zm(ciudad)) %>%
   addProviderTiles(providers$Esri.WorldImagery, group = "Satelite") %>%
   addLayersControl(
     baseGroups = c("Satelite","OSM"), 
-    overlayGroups = c("Sectores próximos","Barrio Mugica"))%>% 
+    overlayGroups = c("Sectores proximos","Barrio Mugica"))%>% 
   
-  addPolygons(data= split_zones,
+  addPolygons(data= sectores_proximos,
               color = "black",
-              weight = 0.4,
+              weight = 0.8,
               opacity = 0.7,
               fillColor = "white",
               fillOpacity = 0.4,
-              popup = ~paste("<strong> AREA KM2: </strong>", round(area_km2, 3), "km2", "km²<br><strong>ID:</strong>", number),
-              group = "Sectores próximos") %>% 
+              popup = ~paste("<strong> AREA KM2: </strong>", round(area_km2, 3), "km2<br><strong>ID:</strong>", numero),
+              group = "Sectores proximos") %>% 
   
   addPolygons(data= b_mugica,
               color = "black",
-              weight = 0.4,
+              weight = 0.8,
+              opacity = 0.7,
+              fillColor = "#a64d79",
+              fillOpacity = 0.4,
+              popup = ~paste("<strong>AREA KM2:</strong>", round(area_km2, 3)),
+              group = "Barrio Mugica")
+
+mapa_sectores_proximos
+```
+
+En base a eso, selecciono los sectores 1,2,7,8,9,10. Estos 6 sectores cuentan con la proximidad suficiente como para considerarse el entorno urbano formal al que debe integrarse la urbanización informal, y son comparables en relación al uso predominantemente residencial del suelo.
+
+El mapa resultante es el siguiente:
+```{r, echo=FALSE, out.width='75%', fig.align='left', fig.height = 7}
+sectores_proximos = sectores_proximos %>% 
+  filter(numero %in% c("1", "2", "7", "8", "9", "10"))
+
+sectores_proximos = st_intersection(sectores_proximos, b_buffer_1800) %>% 
+  st_make_valid() %>% 
+  select(c("area","area_km2","numero","perimetro","geometry")) %>% 
+  mutate(area_km2 = as.numeric(st_area(geometry)) / 1e6)
+
+
+mapa_sectores_proximos =
+leaflet(st_zm(ciudad)) %>%
+  addTiles() %>%
+  addProviderTiles(providers$CartoDB.Positron, group = "OSM",
+                   options = providerTileOptions(minzoom = 1, maxzoom = 15)) %>%
+  addProviderTiles(providers$Esri.WorldImagery, group = "Satelite") %>%
+  addLayersControl(
+    baseGroups = c("Satelite","OSM"), 
+    overlayGroups = c("Sectores proximos","Barrio Mugica"))%>% 
+  
+  addPolygons(data= sectores_proximos,
+              color = "black",
+              weight = 0.8,
               opacity = 0.7,
               fillColor = "white",
+              fillOpacity = 0.4,
+              popup = ~paste("<strong> AREA KM2: </strong>", round(area_km2, 3), "km2<br><strong>ID:</strong>", numero),
+              group = "Sectores proximos") %>% 
+  
+  addPolygons(data= b_mugica,
+              color = "black",
+              weight = 0.8,
+              opacity = 0.7,
+              fillColor = "#a64d79",
               fillOpacity = 0.4,
               popup = ~paste("<strong>AREA KM2:</strong>", round(area_km2, 3)),
               group = "Barrio Mugica")
@@ -262,7 +310,6 @@ mapa_sectores_proximos
 
 ```{r, echo=FALSE, out.width='75%', fig.align='left', fig.height = 7}
 #LLAMO A LOS SECTORES DEL BARRIO MUGICA PARA QUE LA DISTRIBUCIÓN DE LOS PUNTOS ALEATORIOS ESTÉ MÁS DISTRIBUIDA. TODA ESTA PARTE LA HAGO UNA SOLA VEZ.
-#b_mugica_sectores = st_read("data/sector.shp")
 
 #GENERO Y GUARDO LOS PTOS ALEATORIOS PORQUE SINO CADA VEZ QUE CORRO EL CODIGO, SON NUEVOS:
 #puntos_aleatorios_bm <- rowwise(b_mugica_sectores) %>%
@@ -275,27 +322,28 @@ mapa_sectores_proximos
 
 #LLAMO A LOS PUNTOS ALEATORIOS GUARDADOS DEL BARRIO MUGICA:
 puntos_aleatorios_bm = st_read("data/puntos_aleatorios_bm.geojson") %>% 
-  st_transform(4326)
+  st_transform(4326) %>% 
+  clean_names() %>% 
+  filter(sector %in% c("CO", "SM", "YP", "PO", "IN"))
 
-#CONSTRUYO ISOCRONAS DE 20M
-#lista_isocronas20 <- lapply(puntos_aleatorios_bm$geometry, function(point) {
+#CONSTRUYO ISOCRONAS DE 15M
+#lista_isocronas_bm_15 <- lapply(puntos_aleatorios_bm$geometry, function(point) {
 #  osrmIsochrone(loc = st_coordinates(point),
-#                breaks = seq(from = 0, to = 20, by = 20),
+#                breaks = seq(from = 0, to = 15, by = 15),
 #                res = 40,
 #                osrm.profile = "foot")
 #})
 
 #Combino las isocronas
-#isocronas_bind20 <- do.call(rbind, lista_isocronas20)
+#isocronas15_bm = do.call(rbind, lista_isocronas_bm_15)
 
-#st_write(isocronas_bind20, "data/isocronas20.geojson")
+#st_write(isocronas15_bm, "data/isocronas15.3_bm.geojson")
 
-isocronas20 = st_read("data/isocronas20.geojson")%>% 
+isocronas15_bm = st_read("data/isocronas15.3_bm.geojson")%>% 
                     st_transform(4326) %>% 
                     #cbind(st_drop_geometry(centroides)) %>% 
                     st_make_valid()%>% 
-                    mutate(id = row_number())%>% 
-  slice(1:2)
+                    mutate(id = row_number())
 ```
 
 ```{r}
@@ -307,38 +355,38 @@ leaflet(st_zm(ciudad)) %>%
   addProviderTiles(providers$Esri.WorldImagery, group = "Satelite") %>%
   addLayersControl(
     baseGroups = c("OSM","Satelite"), 
-    overlayGroups = c("Puntos Aleatorios Barrio Mugica", "Isocronas Barrio Mugica","CABA","Barrio Mugica","Sectores Próximos" ))%>% 
+    overlayGroups = c("Puntos Aleatorios Barrio Mugica", "Isocronas Barrio Mugica","CABA","Barrio Mugica","Sectores Proximos" ))%>% 
   
   addPolygons(data= ciudad,
               color = "black",
-              weight = 0.4,
+              weight = 1,
               opacity = 0.7,
               fillColor = "white",
               fillOpacity = 0,
               group = "CABA") %>% 
   
-    addPolygons(data= split_zones,
+    addPolygons(data= sectores_proximos,
               color = "black",
-              weight = 0.4,
+              weight = 0.8,
               opacity = 0.7,
               fillColor = "white",
               fillOpacity = 0.4,
-              popup = ~paste("<strong> AREA KM2: </strong>", round(area_km2, 3), "km2", "km²<br><strong>ID:</strong>", number),
-              group = "Sectores próximos") %>% 
+              popup = ~paste("<strong> AREA KM2: </strong>", round(area_km2, 3),"km2<br><strong>ID:</strong>", numero),
+              group = "Sectores proximos") %>% 
   
   addPolygons(data= b_mugica,
               color = "black",
-              weight = 0.4,
+              weight = 0.8,
               opacity = 0.7,
-              fillColor = "white",
+              fillColor = "#a64d79",
               fillOpacity = 0.4,
               popup = ~paste("<strong>AREA KM2:</strong>", round(area_km2, 3)),
               group = "Barrio Mugica") %>% 
 
 
-  addPolygons(data= isocronas20,
+  addPolygons(data= isocronas15_bm,
               color = "#a2c4c9",
-              weight = 0.4,
+              weight = 0.8,
               opacity = 0.7,
               fillColor = "#a2c4c9",
               fillOpacity = 0.5,
@@ -351,19 +399,10 @@ leaflet(st_zm(ciudad)) %>%
               color = "#45818e",
               fillOpacity = 0.2,
               radius = 2,
-              #popup = ~paste("<strong> BARRIO: </strong>", BARRIO),
+              popup = ~paste("<strong> SECTOR: </strong>", sector),
               group = "Puntos Aleatorios Barrio Mugica")
 
 mapa_isocronas
 ```
-
-
-```{r, echo=FALSE, out.width='75%', fig.align='left', fig.height = 7}
-```
-
-
-ggplot(b_mugica_sectores) +
-  geom_sf()
-
 
 
