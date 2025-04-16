@@ -13,6 +13,8 @@ navbar:
     href: index.html
   - text: "Caso de Estudio" 
     href: analisis.html
+  - text: "Metodología" 
+  href: metodologia.html
   right:
   - text: "+Info"
     menu:
