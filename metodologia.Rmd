@@ -195,11 +195,6 @@ leaflet(st_zm(ciudad)) %>%
 mapa_ciudad_buffer
 ```
 
-```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
-ggplot(b_buffer) +
-  geom_sf()
-```
-
 Imagen 2. Radios Censales que se intersectan con el buffer (imagen 2) 
 
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
@@ -389,7 +384,7 @@ Isocronas
 
 <details><summary> Código </summary>
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
-#LLAMO A LOS SECTORES DEL BARRIO MUGICA PARA QUE LA DISTRIBUCIÓN DE LOS PUNTOS ALEATORIOS ESTÉ MÁS DISTRIBUIDA. TODA ESTA PARTE LA HAGO UNA SOLA VEZ.
+#LLAMO A LOS SECTORES DEL BARRIO MUGICA PARA QUE LOS PUNTOS ALEATORIOS ESTÉN MÁS DISTRIBUIDOS. TODA ESTA PARTE LA HAGO UNA SOLA VEZ.
 
 #GENERO Y GUARDO LOS PTOS ALEATORIOS PORQUE SINO CADA VEZ QUE CORRO EL CODIGO, SON NUEVOS:
 #puntos_aleatorios_bm <- rowwise(b_mugica_sectores) %>%
@@ -425,7 +420,171 @@ isocronas15_bm = st_read("data/isocronas15.3_bm.geojson")%>%
                     st_make_valid()%>% 
                     mutate(id = row_number())
 ```
+```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
+#ISOCRONAS SECTORES PROXIMOS
+sectores_contorno = sectores_prox %>% 
+  group_by(cluster) %>% 
+  summarise()
+
+ggplot(sectores_contorno) +
+  geom_sf()
+
+#GENERO Y GUARDO LOS PTOS ALEATORIOS PORQUE SINO CADA VEZ QUE CORRO EL CODIGO, SON NUEVOS:
+#puntos_aleatorios_sp <- sectores_contorno %>%
+#  rowwise() %>%
+#  mutate(puntos = list(st_sample(geometry, size = 5, type = "random"))) %>%
+#  ungroup() %>%
+#  select(-geometry) %>%  # elimina la geometría original
+#  unnest(puntos) %>%
+#  st_as_sf(coords = "puntos", crs = st_crs(sectores_contorno)) %>% 
+#  st_drop_geometry() %>% 
+#  rename("geometry"="puntos") %>% 
+#  mutate(punto = paste0(cluster,".",row_number()))
+  
+
+#GUARDO LOS PUNTOS PARA LLAMARLOS DESPUES:
+#st_write(puntos_aleatorios_sp, "data/puntos_aleatorios_sp.geojson")
+
+#LLAMO A LOS PUNTOS ALEATORIOS GUARDADOS DE LOS SECTORES PROXIMOS:
+puntos_aleatorios_sp = st_read("data/puntos_aleatorios_sp.geojson") %>% 
+  st_transform(4326) %>% 
+  clean_names() %>% 
+  mutate(id = str_sub(punto, 3))
+
+puntos_aleatorios_sp$id = as.numeric(puntos_aleatorios_sp$id)
+#CONSTRUYO ISOCRONAS DE 15M
+#lista_isocronas_sp_15 <- lapply(puntos_aleatorios_sp$geometry, function(point) {
+#  osrmIsochrone(loc = st_coordinates(point),
+#                breaks = seq(from = 0, to = 15, by = 15),
+#                res = 40,
+#                osrm.profile = "foot")
+#})
+
+#Combino las isocronas
+#isocronas15_sp = do.call(rbind, lista_isocronas_sp_15)
+
+#st_write(isocronas15_sp, "data/isocronas15_sp.geojson")
+
+isocronas15_sp = st_read("data/isocronas15_sp.geojson")%>% 
+                    st_transform(4326) %>% 
+                    #cbind(st_drop_geometry(centroides)) %>% 
+                    st_make_valid()%>% 
+                    mutate(id = row_number())
+
+isocronas15_sp = left_join(isocronas15_sp, puntos_aleatorios_sp %>% 
+                                              st_drop_geometry() %>% 
+                             select(cluster,id))
+```
+ggplot(b_buffer) +
+  geom_sf()
+  
 </details>
 
+Imagen 6. Isocronas a 15 minutos a pie desde los puntos aleatotios dentro del Barrio Mugica y de cada uno de los 6 sectores próximos.
 
+```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
+
+pal = colorFactor("Blues", domain = sectores_prox$cluster)
+
+mapa_isocronas_tot =
+leaflet(st_zm(sectores_prox)) %>%
+  addTiles() %>%
+  addProviderTiles(providers$CartoDB.Positron, group = "OSM",
+                   options = providerTileOptions(minzoom = 1, maxzoom = 15)) %>%
+  addProviderTiles(providers$Esri.WorldImagery, group = "Satelite") %>%
+  addLayersControl(
+    baseGroups = c("OSM","Satelite"), 
+    overlayGroups = c("Isocronas Barrio Mugica","Barrio Mugica", "Puntos Aleatorios BM", "Isocronas Sector 1", "Isocronas Sector 2", "Isocronas Sector 3", "Isocronas Sector 4", "Isocronas Sector 5", "Isocronas Sector 6", "Sectores Proximos", "Puntos Aleatorios SP"))%>% 
+  
+  addPolygons(data= isocronas15_bm,
+              color = "#a64d79",
+              weight = 1,
+              opacity = 0.7,
+              fillColor = "#a64d79",
+              fillOpacity = 0.4,
+              group = "Isocronas Barrio Mugica") %>%
+  
+
+  addPolygons(data= b_mugica,
+              color = "black",
+              weight = 1,
+              opacity = 0.7,
+              fillColor = "white",
+              fillOpacity = 0,
+              group = "Barrio Mugica") %>%
+
+  addPolygons(data= isocronas15_sp %>% filter(cluster=="1"),
+              color = ~pal(cluster),
+              weight = 0.6,
+              opacity = 0.7,
+              fillColor = ~pal(cluster),
+              fillOpacity = 0.4,
+              group = "Isocronas Sector 1") %>% 
+  
+    addPolygons(data= isocronas15_sp%>% filter(cluster=="2"),
+              color = ~pal(cluster),
+              weight = 0.6,
+              opacity = 0.7,
+              fillColor = ~pal(cluster),
+              fillOpacity = 0.4,
+              group = "Isocronas Sector 2") %>% 
+  
+    addPolygons(data= isocronas15_sp%>% filter(cluster=="3"),
+              color = ~pal(cluster),
+              weight = 0.6,
+              opacity = 0.7,
+              fillColor = ~pal(cluster),
+              fillOpacity = 0.4,
+              group = "Isocronas Sector 3") %>% 
+  
+    addPolygons(data= isocronas15_sp %>% filter(cluster=="4"),
+              color = ~pal(cluster),
+              weight = 0.6,
+              opacity = 0.7,
+              fillColor = ~pal(cluster),
+              fillOpacity = 0.4,
+              group = "Isocronas Sector 4") %>% 
+  
+    addPolygons(data= isocronas15_sp %>% filter(cluster=="5"),
+              color = ~pal(cluster),
+              weight = 0.6,
+              opacity = 0.7,
+              fillColor = ~pal(cluster),
+              fillOpacity = 0.4,
+              group = "Isocronas Sector 5") %>% 
+  
+    addPolygons(data= isocronas15_sp %>% filter(cluster=="6"),
+              color = ~pal(cluster),
+              weight = 0.6,
+              opacity = 0.7,
+              fillColor = ~pal(cluster),
+              fillOpacity = 0.4,
+              group = "Isocronas Sector 6") %>% 
+
+  addPolygons(data= sectores_contorno,
+              color = "black",
+              weight = 0.6,
+              opacity = 0.7,
+              fillColor = "white",
+              fillOpacity = 0,
+              group = "Sectores Proximos") %>% 
+  
+    addCircleMarkers(data=puntos_aleatorios_bm,
+              fillColor = "black",
+              weight = 0.5,
+              color = "black",
+              fillOpacity = 0.5,
+              radius = 2,
+              group = "Puntos Aleatorios BM") %>%
+
+  addCircleMarkers(data=puntos_aleatorios_sp,
+              fillColor = "black",
+              weight = 0.5,
+              color = "black",
+              fillOpacity = 0.5,
+              radius = 2,
+              group = "Puntos Aleatorios SP")
+
+mapa_isocronas_tot
+```
 
