@@ -9,18 +9,21 @@ navbar:
     image: https://www.utdt.edu/Images/ui2014/logo.png
     href: https://www.utdt.edu
   left: 
-  - text: "Metodología" 
-    href: index.html
-  - text: "Caso de Estudio" 
-    href: analisis.html
+    - text: "Metodología" 
+      href: index.html
+    - text: "Caso de Estudio" 
+      href: analisis.html
   right:
-  - text: "+Info"
-    menu:
-    - text: "Fuentes"
-      href: fuentes.html
-    - text: "About"
-      href: about.html
-  - icon: fab fa-github
-    href: https://github.com/AngSuAnz/IAUII_TRABAJO_FINAL
+    - text: "+Info"
+      menu:
+        - text: "Fuentes"
+          href: fuentes.html
+        - text: "About"
+          href: about.html
+    - icon: fab fa-github
+      href: https://github.com/AngSuAnz/IAUII_TRABAJO_FINAL
     - search: true
-output: distill::distill_article:
+
+output:
+  distill::distill_article: default
+
