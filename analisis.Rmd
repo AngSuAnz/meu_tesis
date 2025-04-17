@@ -97,7 +97,7 @@ $(document).ready(function() {
 </script>
 
 
-Acá hago una intro épica para mi tema de tesis.
+Acá hago una intro épica para mi tema de tesis!
 
 
 <h2>
