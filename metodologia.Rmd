@@ -588,3 +588,4 @@ leaflet(st_zm(sectores_prox)) %>%
 mapa_isocronas_tot
 ```
 
+bai
