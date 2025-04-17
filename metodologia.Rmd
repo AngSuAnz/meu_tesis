@@ -107,9 +107,11 @@ Acá hago una intro épica para mi tema de tesis.
 
 Tomo el polígono del barrio Padres Carlos Mugica y el de la ciudad de Buenos Aires.
 
+Como el objetivo es observar el acceso a la ciudad que tiene el Barrio Mugica en comparación a la ciudad formal circundante, comienzo creando un buffer a 1500 metros del Barrio Mugica, y tomo los radios censales (censo 2022) que se intersectan con el mismo.
+
 <details><summary> Código </summary> 
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
-
+#CARGO LAS BASES
 ciudad = st_read("data/perimetro.geojson") %>% 
   #mutate(AREAKM2 = round((AREA/1000000),2)) %>% 
   st_transform(4326)%>% 
@@ -128,18 +130,7 @@ b_mugica <- st_buffer(st_union(b_mugica_sectores), 0.5) %>%
 #EDITO EL POLIGONO DE LA CIUDAD PARA DESCONTARLE EL BARRIO:
 ciudad_cfiltro = st_difference(ciudad, b_mugica)
 ```
-</details>
 
-Imagen 1. Ciudad Autónoma de Buenos Aires y recorte del polígono del Barrio Padre Carlos Mugica definido en la ley N° 6.129 (2018)
-
-```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
-ggplot(ciudad_cfiltro) +
-  geom_sf()
-```
-
-Como el objetivo es observar el acceso a la ciudad que tiene el Barrio Mugica en comparación a la ciudad formal circundante, comienzo creando un buffer a 1500 metros del Barrio Mugica, y tomo los radios censales (censo 2022) que se intersectan con el mismo.
-
-<details><summary> Código </summary> 
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 #Creo un buffer en torno al barrio para seleccionar los radios sensales próximos:
 b_buffer <- st_buffer(b_mugica, dist = 1500)
@@ -161,14 +152,55 @@ radios_filtrados <- st_filter(radios_censales, b_buffer)
 ```
 </details>
 
-Imagen 2. Buffer resultante, recortado contra el límite de la ciudad de la ciudad.
+Imagen 1. Ciudad Autónoma de Buenos Aires, polígono del Barrio Padre Carlos Mugica definido en la ley N° 6.129 (2018) y buffer de 1500m en torno al mismo.
+
+```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
+mapa_ciudad_buffer =
+leaflet(st_zm(ciudad)) %>%
+  addTiles() %>%
+  addProviderTiles(providers$CartoDB.Positron, group = "OSM",
+                   options = providerTileOptions(minzoom = 1, maxzoom = 15)) %>%
+  addProviderTiles(providers$Esri.WorldImagery, group = "Satelite") %>%
+  addLayersControl(
+    baseGroups = c("OSM","Satelite"), 
+    overlayGroups = c("CABA","Buffer Barrio Mugica","Barrio Mugica" ))%>% 
+  
+  addPolygons(data= ciudad,
+              color = "black",
+              weight = 1,
+              opacity = 0.7,
+              fillColor = "white",
+              fillOpacity = 0,
+              group = "CABA") %>% 
+
+  addPolygons(data= b_buffer,
+              color = "black",
+              weight = 0.6,
+              opacity = 0.7,
+              fillColor = "#a64d79",
+              fillOpacity = 0.3,
+              popup = "<strong>BUFFER BARRIO - DISTANCIA:</strong>1500m",
+              group = "Buffer Barrio Mugica") %>% 
+
+  
+  addPolygons(data= b_mugica,
+              color = "black",
+              weight = 0.8,
+              opacity = 0.7,
+              fillColor = "#a64d79",
+              fillOpacity = 0.4,
+              popup = ~paste("<strong>BARRIO P. MUGICA - AREA:</strong>", round(area_km2, 3), "km2"),
+              group = "Barrio Mugica")
+    
+mapa_ciudad_buffer
+```
 
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 ggplot(b_buffer) +
   geom_sf()
 ```
 
-Imagen 3. Radios Censales que se intersectan con el buffer (imagen 2) 
+Imagen 2. Radios Censales que se intersectan con el buffer (imagen 2) 
 
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 mapa_radios =
@@ -240,7 +272,7 @@ radios_selec = left_join(radios_viviendas, radios_informal, by = "cod_indec") %>
 ```
 </details>
 
-Imagen 4. Radios censales seleccionados.
+Imagen 3. Radios censales seleccionados.
 
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 
