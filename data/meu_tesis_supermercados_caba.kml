@@ -1,0 +1,448 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>meu_tesis_supermercados_caba</name>
+    <description/>
+    <Style id="icon-1899-0288D1-nodesc-normal">
+      <IconStyle>
+        <color>ffd18802</color>
+        <scale>1</scale>
+        <Icon>
+          <href>https://www.gstatic.com/mapspro/images/stock/503-wht-blank_maps.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <Style id="icon-1899-0288D1-nodesc-highlight">
+      <IconStyle>
+        <color>ffd18802</color>
+        <scale>1</scale>
+        <Icon>
+          <href>https://www.gstatic.com/mapspro/images/stock/503-wht-blank_maps.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>1</scale>
+      </LabelStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <StyleMap id="icon-1899-0288D1-nodesc">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-1899-0288D1-nodesc-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-1899-0288D1-nodesc-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Folder>
+      <name>Supermercados</name>
+      <Placemark>
+        <name>Carrefour Hipermercado Salguero</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.4034702,-34.5747293,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Supermercados DIA</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.4015467,-34.5863542,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Supermercados DIA</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.4052048,-34.5946034,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Jumbo</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.4297398,-34.5773553,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Supermercado DIA</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.3886307,-34.6005966,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Supermercados DIA</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.3850914,-34.603153,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Carrefour Market</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.4057465,-34.5898066,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Hipermercado COTO</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.3996158,-34.5904145,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Hipermercado COTO</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.4081024,-34.5933813,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Hipermercado COTO</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.4117817,-34.6024646,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Supermercado COTO</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.3892313,-34.6006224,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Hipermercado COTO</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.4167594,-34.5850372,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Hipermercado COTO</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.3991706,-34.6121874,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Supermercados DIA</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.4150864,-34.6041346,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Supermercados DIA</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.4207137,-34.6050354,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Supermercados DIA</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.425008,-34.5791376,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Supermercados DIA</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.4270336,-34.5878128,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Supermercados Día</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.4321912,-34.5954776,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Supermercados DIA</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.4220282,-34.5734316,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Bon Marché</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.3839454,-34.5888442,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Carrefour Market</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.3898393,-34.5920594,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Mercado de San Nicolás</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.3920787,-34.5998034,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Mercado Soho</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.4267951,-34.5888671,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Mercat Villa Crespo</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.4403214,-34.5937991,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Carrefour Market</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.380449,-34.6082077,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Mercado de San Telmo</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.3725069,-34.6185589,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Palermo Almacen</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.422169,-34.58164,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>La Morenita - autoservicio (Kiosco, Verduleria, Carniceria, Almacen)</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.3846388,-34.6121909,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Supermercado Chino</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.410946,-34.5906479,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Supermercado chino</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.4212573,-34.5910004,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Supermercado chino</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.3788308,-34.6011878,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Supermercados DIA</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.3961209,-34.6093362,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Hipermercado COTO</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.3734503,-34.5846672,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Supermercados DIA</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.3983315,-34.5920519,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Jumbo</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.379394,-34.5941977,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Supermercados DIA</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.376777,-34.6020399,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Supermercados DIA</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.3731464,-34.6008419,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Supermercados DIA</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.39714,-34.601745,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Supermercados DIA</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.3796671,-34.6120186,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Supermercados DIA</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.4516088,-34.5826641,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Supermercado COTO</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.3887575,-34.6079159,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Carrefour Market Sucursal Obelisco</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.3830642,-34.603981,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Carrefour Market</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.4229806,-34.5893097,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Diarco Barrio</name>
+        <styleUrl>#icon-1899-0288D1-nodesc</styleUrl>
+        <Point>
+          <coordinates>
+            -58.3861766,-34.5783272,0
+          </coordinates>
+        </Point>
+      </Placemark>
+    </Folder>
+  </Document>
+</kml>

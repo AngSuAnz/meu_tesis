@@ -9,50 +9,26 @@ description: |
 
 options(scipen = 999)
 
-library(bootstrap)
-library(bslib)
-library(data.table)
+library(distill)
 library(dplyr)
-library(DT)
-library(geofacet)
 library(ggmap)
 library(ggplot2)
-library(googlesheets4)
-library(installr)
+library(gotop)
+library(htmltools)
 library(janitor)
 library(knitr)
 library(leaflet)
 library(leaflet.extras)
-library(lubridate)
 library(lwgeom)
-library(maptools)
-library(openxlsx)
 library(osmdata)
 library(osrm)
-library(plotly)
 library(purrr)
-library(RColorBrewer)
 library(readxl)
-library(readr)
-library(rgdal)
-library(rgeos)
 library(rmarkdown)
-library(rsconnect)
-library(scales)
 library(sf)
-#library(shiny)
-#library(shinydashboard)
-#library(shinyjs)
-library(sodium)
-library(sp)
 library(stringr)
-library(tidygeocoder)
 library(tidyr)
 library(tidyverse)
-library(viridis)
-library(viridisLite)
-library(vroom)
-library(writexl)
 
 #In RStudio, you can render your site locally (knit + preview all .Rmd files in one fell swoop). Se puede escribir en la consola: rmarkdown::render_site()  SIEMPRE HACER ESTO PARA IMPACTAR LOS CAMBIOS EN EL SITIO!
 
@@ -98,6 +74,7 @@ $(document).ready(function() {
 
 
 Acá hago una intro épica para mi tema de tesis.
+Una gran parte del análisis se vincula con este trabajo: https://buenosaires.gob.ar/publicaciones-de-informacion-territorial/indice-de-cobertura-de-las-necesidades-de-la-vida
 
 
 <h2>
@@ -286,7 +263,7 @@ radios_informal = st_filter(radios_viviendas, b_mugica) %>%
 radios_selec = left_join(radios_viviendas, radios_informal, by = "cod_indec") %>% 
   mutate(formal = if_else(is.na(formal), "1", formal))
 
-rm(list = c("radios_filtrados", "radios_vivendas", "viviendas"), envir = .GlobalEnv)
+rm(list = c("radios_filtrados", "radios_viviendas", "viviendas"), envir = .GlobalEnv)
 
 ```
 </details>
@@ -522,7 +499,6 @@ ggplot(sectores_contorno) +
 
 transformar_todo_a_crs(22185)
 ```
-
 
 De esta manera, tengo 5 puntos aleatorios en cada sector, con una isocrona partiendo de cada uno. En total son 35 puntos e isocronas, contando los propios del Barrio.
 
@@ -839,14 +815,14 @@ transformar_todo_a_crs(22185)
 #MODIFICO LAS BD DE LOS PUNTOS DE ORIGEN Y LAS PARADAS PARA PODER TRABAJAR CON ELLAS EN CONJUNTO
 puntos_aleatorios_bm = puntos_aleatorios_bm %>% 
   rename("id_origen"="fid",
-         "origen_geometry" = "geometry") %>% 
-  select("id_origen", "origen_geometry")%>% 
+         "geometry_puntos" = "geometry") %>% 
+  select("id_origen", "geometry_puntos")%>% 
   mutate(id_origen = as.factor(id_origen))
 
 puntos_aleatorios_sp = puntos_aleatorios_sp %>% 
   rename("id_origen"="id",
-         "origen_geometry" = "geometry")%>%
-  select("id_origen", "origen_geometry")%>% 
+         "geometry_puntos" = "geometry")%>%
+  select("id_origen", "geometry_puntos")%>% 
   mutate(id_origen = as.factor(id_origen))
   
 paradas_bm = paradas_bm %>% 
@@ -860,25 +836,25 @@ paradas_sp = paradas_sp %>%
 # UNO AMBAS POR ID_ORIGEN Y CONVIERTO A SF CON 2 GEOMETRIAS
 paradas_bm <- paradas_bm %>%
   left_join(puntos_aleatorios_bm %>% st_drop_geometry(), by = "id_origen") %>%
-  mutate(origen_geometry = puntos_aleatorios_bm$origen_geometry[match(id_origen, puntos_aleatorios_bm$id_origen)])
+  mutate(geometry_puntos = puntos_aleatorios_bm$geometry_puntos[match(id_origen, puntos_aleatorios_bm$id_origen)])
 
 paradas_bm = st_sf(paradas_bm, sf_column_name = "geometry")
 
 # UNO AMBAS POR ID_ORIGEN Y CONVIERTO A SF CON 2 GEOMETRIAS
 paradas_sp = paradas_sp %>%
   left_join(puntos_aleatorios_sp %>% st_drop_geometry(), by = "id_origen") %>%
-  mutate(origen_geometry = puntos_aleatorios_sp$origen_geometry[match(id_origen, puntos_aleatorios_sp$id_origen)])
+  mutate(geometry_puntos = puntos_aleatorios_sp$geometry_puntos[match(id_origen, puntos_aleatorios_sp$id_origen)])
 
 paradas_sp = st_sf(paradas_sp, sf_column_name = "geometry")
 
-#CALCULO LAS DISTANCIAS ENTRE ORIGEN (ORIGEN_GEOMETRY QUE ES EL PUNTO ALEATORIO) Y EL DESTINO (GEOMETRY QUE ES EL PUNTO DE LA PARADA). DESPUES MIDO ESO EN TIEMPO Y CALCULO EL TIEMPO QUE QUEDA PARA QUE EL VIAJE SEA DE 15M
+#CALCULO LAS DISTANCIAS ENTRE ORIGEN (geometry_puntos QUE ES EL PUNTO ALEATORIO) Y EL DESTINO (GEOMETRY QUE ES EL PUNTO DE LA PARADA). DESPUES MIDO ESO EN TIEMPO Y CALCULO EL TIEMPO QUE QUEDA PARA QUE EL VIAJE SEA DE 15M
 paradas_bm = paradas_bm %>% 
-  mutate(hasta_distancia = st_distance(geometry, origen_geometry, by_element = TRUE),
+  mutate(hasta_distancia = st_distance(geometry, geometry_puntos, by_element = TRUE),
          hasta_tiempo = as.numeric(hasta_distancia) / 83.33,
          desde_tiempo = 15-hasta_tiempo)
 
 paradas_sp = paradas_sp %>% 
-  mutate(hasta_distancia = st_distance(geometry, origen_geometry, by_element = TRUE),
+  mutate(hasta_distancia = st_distance(geometry, geometry_puntos, by_element = TRUE),
          hasta_tiempo = as.numeric(hasta_distancia) / 83.33,
          desde_tiempo = 15-hasta_tiempo)
 
@@ -888,19 +864,19 @@ paradas_sp = paradas_sp %>%
 #  mutate(linea_sentido = paste0(linea,if_else(sentido == "IDA","I","V")))
 
 #HAGO LISTAS DE TODOS LOS COLECTIVOS QUE PASAN POR CADA PARADA Y LOS DEFINO CON EL MISMO FORMATO QUE LOS DEFINI EN LA BASE DE RECORRIDOS
-#paradas_sp = paradas_sp %>%
-#  mutate(across(c(L1, L2, L3, L4), ~ sprintf("%03d", as.numeric(.))),
-#         linea_sentido = pmap(
-#    list(L1, l1_sen, L2, l2_sen, L3, l3_sen, L4, l4_sen),
-#    ~ compact(c(paste0(..1, ..2), paste0(..3, ..4), paste0(..5, ..6), paste0(..7, ..8)))
-#  ))
+paradas_sp = paradas_sp %>%
+  mutate(across(c(L1, L2, L3, L4), ~ sprintf("%03d", as.numeric(.))),
+         linea_sentido = pmap(
+    list(L1, l1_sen, L2, l2_sen, L3, l3_sen, L4, l4_sen),
+    ~ compact(c(paste0(..1, ..2), paste0(..3, ..4), paste0(..5, ..6), paste0(..7, ..8)))
+  ))
 
-#paradas_bm <- paradas_bm %>%
-#  mutate(across(c(L1, L2, L3), ~ sprintf("%03d", as.numeric(.))),
-#         linea_sentido = pmap(
-#    list(L1, l1_sen, L2, l2_sen, L3, l3_sen),
-#    ~ compact(c(paste0(..1, ..2), paste0(..3, ..4), paste0(..5, ..6)))
-#  ))
+paradas_bm <- paradas_bm %>%
+  mutate(across(c(L1, L2, L3), ~ sprintf("%03d", as.numeric(.))),
+         linea_sentido = pmap(
+    list(L1, l1_sen, L2, l2_sen, L3, l3_sen),
+    ~ compact(c(paste0(..1, ..2), paste0(..3, ..4), paste0(..5, ..6)))
+  ))
 
 
 # ARMO UNA LISTA UNICA CON TODAS LAS LINEAS_SENTIDO QUE PASAN POR LAS PARADAS SELECCIONADAS Y FILTRO LOS RECORRIDOS SEGUN SI PERTENECEN A ESA LISTA
@@ -925,7 +901,7 @@ recorridos_bm = st_read("data/recorridos_bm.geojson")
 </details>
 
 Imagen 7. Recorridos enteros de los colectivos que pasan por las paradas seleccionadas. 
-Cada recorrido tiene una etiqueta que expresa la lína, recorrido y sentido del mismo.
+Cada recorrido tiene una etiqueta que expresa la línea, recorrido y sentido del mismo.
 
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 
@@ -1068,14 +1044,521 @@ mapa
 transformar_todo_a_crs(22185)
 ```
 
+
+<details><summary> Código inútil-arreglar </summary>
+---------------------------------------------------------------------------------------------------------------
+
+# Rename geometry column and keep it
+recorridos_bm <- recorridos_bm %>%
+  rename(geometry_recorrido = geometry)
+
+recorridos_bm_df <- st_drop_geometry(recorridos_bm)
+
+# Set geometry column name in paradas_bm
+names(paradas_bm)[names(paradas_bm) == "geometry"] <- "geometry_parada"
+st_geometry(paradas_bm) <- "geometry_parada"
+
+# Clean and prepare paradas
+paradas_desde_bm <- paradas_bm %>%
+  unnest(linea_sentido) %>%
+  filter(linea_sentido != " NANA") %>%
+  select(fid, id_origen, geometry_parada, geometry_puntos, hasta_distancia, hasta_tiempo, desde_tiempo, linea_sentido)
+
+# Ensure geometry_parada is a column (not active geometry)
+paradas_desde_bm <- paradas_desde_bm %>%
+  mutate(geometry_parada = st_geometry(.))
+
+# Join safely
+recorridos_desde_bm <- paradas_desde_bm %>%
+  left_join(
+    recorridos_bm_df %>% select(linea_sentido, geometry_recorrido),
+    by = "linea_sentido"
+  )
+
+# Rebuild sf with geometry_parada as active geometry
+recorridos_desde_bm <- st_as_sf(recorridos_desde_bm, sf_column_name = "geometry_parada")
+
+
+
+#Calculo en m la distancia que se puede recorrer con el tiempo disponible que queda del viaje de 15m desde la parada a la que se llega en adelante:
+##recorridos_desde_bm = recorridos_desde_bm %>% 
+##  mutate(desde_distancia = desde_tiempo*250) #Teniendo en cuenta que la velocidad efectiva promedio del servicio contando paradas son 15km/m
+
+
+
+# Función para proyectar el punto sobre la línea
+proyectar_punto_en_linea <- function(geom_linea, geom_punto) {
+  nearest_line <- st_nearest_points(geom_punto, geom_linea)
+  points <- st_cast(nearest_line, "POINT")
+  
+  if (length(points) != 2) {
+    warning("Projection failed.")
+    return(NA)
+  }
+
+  projected_point <- points[2]
+
+  # Set CRS explicitly
+  projected_point <- st_set_crs(projected_point, st_crs(geom_linea))
+
+  
+  return(projected_point)
+}
+
+cortar_linea_desde_punto <- function(geom_linea, geom_punto, dist_max_m) {
+  if (st_crs(geom_linea) != st_crs(geom_punto)) {
+    print(st_crs(geom_linea))
+    print(st_crs(geom_punto))
+    stop("CRS mismatch between line and point")
+  }
+
+  # Project the point onto the line
+  punto_proyectado <- proyectar_punto_en_linea(geom_linea, geom_punto)
+
+  # Cut the line at the projected point
+  cortar_linea_raw <- tryCatch(
+    lwgeom::st_split(geom_linea, punto_proyectado),
+    error = function(e) return(NA)
+  )
+
+  if (is.na(cortar_linea_raw)) return(NA)
+
+  cortar_linea <- st_collection_extract(cortar_linea_raw, "LINESTRING")
+
+  if (length(cortar_linea) < 2) return(NA)
+
+  dists <- st_distance(st_startpoint(cortar_linea), punto_proyectado)
+  segmento_proximo <- cortar_linea[[which.min(as.numeric(dists))]]
+
+  largo_total <- as.numeric(st_length(segmento_proximo))
+
+  if (dist_max_m >= largo_total) {
+    return(segmento_proximo)
+  }
+
+  corte_punto <- st_line_sample(segmento_proximo, sample = dist_max_m / largo_total)
+
+  corte_final_raw <- tryCatch(
+    lwgeom::st_split(segmento_proximo, corte_punto),
+    error = function(e) return(NA)
+  )
+
+  if (is.na(corte_final_raw)) return(NA)
+
+  corte_final <- st_collection_extract(corte_final_raw, "LINESTRING")
+
+  return(corte_final[[1]])
+}
+
+
+# Ahora proyectar y cortar
+recorridos_desde_bm <- recorridos_desde_bm %>%
+  rowwise() %>%
+  mutate(
+    geometry_parada_proyectada = list(proyectar_punto_en_linea(geometry_recorrido, geometry_parada)),
+    recorrido_desde_parada = list(cortar_linea_desde_punto(geometry_recorrido, geometry_parada_proyectada, desde_distancia))
+  ) %>%
+  ungroup()
+
+-------------------------------------------------------------------------------------------------------
+
+</details>
+
+<h2>
+  LOCALES COMERCIALES </br>
+  <small class="text-muted"> |  Dentro de los polígonos </small>
+</h2>
+
+Comercios dentro del Barrio Mugica
+
 <details><summary> Código </summary>
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
+#VEO QUE CAPAS TENGO EN INFORMACION TERRITORIAL (GUARDAR SOLO LO OTRO DESPUÉS Y NO LLAMAR TODO!!!!!!!!!!!!!!!!!!!!!!)
+print(st_layers("data/informacion_territorial.gpkg"))
 
+#FILTRO LOS QUE SON ALMACENES:
+comercios1_bm = st_read("data/informacion_territorial.gpkg", layer = "comercios") %>% 
+  filter(Tipo == "Comercio", 
+         Rubro %in% "ALMACÉN") %>% 
+  st_transform(22185)
+
+#IMPORTO LOS COMERCIOS MAPEADOS DE CABA
+comercios_caba = st_read("data/meu_tesis_supermercados_caba.kml") %>% 
+  st_transform(22185)%>% 
+  st_make_valid() %>% 
+  st_zm()
+
+#FILTRO LOS COMERCIOS DE CABA PARA QUEDARME CON LOS QUE CAEN EN LAS ISOCRONAS DEL BM
+comercios2_bm = st_filter(comercios_caba, isocronas15_bm) %>% 
+  rename(geom = geometry,
+         Observaciones = Name) %>% 
+  mutate(Rubro = "Supermercado",
+         Tipo = "Comercio",
+         Subrubro = "Kiosco, Almacen y alimentos") %>% 
+  select(-Description)
+
+comercios_bm = bind_rows(comercios1_bm, comercios2_bm)
+
+rm(comercios1_bm, comercios2_bm)
+```
+</details>
+
+```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
+
+pal = colorFactor("Blues", domain = sectores_prox$cluster)
+
+transformar_todo_a_crs(4326)
+
+mapa =
+leaflet(st_zm(sectores_prox)) %>%
+  addTiles() %>%
+  addProviderTiles(providers$CartoDB.Positron, group = "OSM",
+                   options = providerTileOptions(minzoom = 1, maxzoom = 15)) %>%
+  addProviderTiles(providers$Esri.WorldImagery, group = "Satelite") %>%
+  addLayersControl(
+    baseGroups = c("OSM","Satelite"), 
+    overlayGroups = c("Isocronas Barrio Mugica","Barrio Mugica", "Puntos Aleatorios BM", "Comercios BM"))%>% 
+  
+  addPolygons(data= isocronas15_bm,
+              color = "#a64d79",
+              weight = 1,
+              opacity = 0.7,
+              fillColor = "#a64d79",
+              fillOpacity = 0.4,
+              group = "Isocronas Barrio Mugica") %>%
+  
+
+  addPolygons(data= b_mugica,
+              color = "black",
+              weight = 1,
+              opacity = 0.7,
+              fillColor = "white",
+              fillOpacity = 0,
+              group = "Barrio Mugica") %>%
+  
+      addCircleMarkers(data=puntos_aleatorios_bm,
+              fillColor = "black",
+              weight = 0.5,
+              color = "black",
+              fillOpacity = 0.5,
+              radius = 2,
+              group = "Puntos Aleatorios BM") %>%
+
+  
+  addCircleMarkers(data=comercios_bm,
+              fillColor = "#ffd966",
+              weight = 0.5,
+              color = "#ffd966",
+              fillOpacity = 0.8,
+              radius = 2,
+              popup = ~paste("<strong> RUBRO: </strong>", Rubro,"<br><strong>SECTOR:</strong>", Sector,"<br><strong>DIRECCIÓN:</strong>", Calle, " ", Altura),
+              group = "Comercios BM") 
+  
+
+mapa
+
+transformar_todo_a_crs(22185)
+```
+
+
+Comercios en los sectores formales próximos
+
+<details><summary> Código inútil-arreglar </summary>
+```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
+#FILTRO LOS COMERCIOS DE CABA PARA QUEDARME CON LOS QUE CAEN EN LAS ISOCRONAS DE LOS SP
+comercios_sp = st_filter(comercios_caba, isocronas15_sp)
+```
+</details>
+
+```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
+
+pal = colorFactor("Blues", domain = sectores_prox$cluster)
+
+transformar_todo_a_crs(4326)
+
+mapa =
+leaflet(st_zm(sectores_prox)) %>%
+  addTiles() %>%
+  addProviderTiles(providers$CartoDB.Positron, group = "OSM",
+                   options = providerTileOptions(minzoom = 1, maxzoom = 15)) %>%
+  addProviderTiles(providers$Esri.WorldImagery, group = "Satelite") %>%
+  addLayersControl(
+    baseGroups = c("OSM","Satelite"), 
+    overlayGroups = c("Barrio Mugica", "Isocronas Sector 1", "Isocronas Sector 2", "Isocronas Sector 3", "Isocronas Sector 4", "Isocronas Sector 5", "Isocronas Sector 6", "Sectores Proximos", "Puntos Aleatorios SP", "Comercios SP"))%>% 
+  
+
+
+  addPolygons(data= b_mugica,
+              color = "black",
+              weight = 1,
+              opacity = 0.7,
+              fillColor = "white",
+              fillOpacity = 0,
+              group = "Barrio Mugica") %>%
+
+  addPolygons(data= isocronas15_sp %>% filter(cluster=="1"),
+              color = ~pal(cluster),
+              weight = 0.6,
+              opacity = 0.7,
+              fillColor = ~pal(cluster),
+              fillOpacity = 0.4,
+              group = "Isocronas Sector 1") %>% 
+  
+    addPolygons(data= isocronas15_sp%>% filter(cluster=="2"),
+              color = ~pal(cluster),
+              weight = 0.6,
+              opacity = 0.7,
+              fillColor = ~pal(cluster),
+              fillOpacity = 0.4,
+              group = "Isocronas Sector 2") %>% 
+  
+    addPolygons(data= isocronas15_sp%>% filter(cluster=="3"),
+              color = ~pal(cluster),
+              weight = 0.6,
+              opacity = 0.7,
+              fillColor = ~pal(cluster),
+              fillOpacity = 0.4,
+              group = "Isocronas Sector 3") %>% 
+  
+    addPolygons(data= isocronas15_sp %>% filter(cluster=="4"),
+              color = ~pal(cluster),
+              weight = 0.6,
+              opacity = 0.7,
+              fillColor = ~pal(cluster),
+              fillOpacity = 0.4,
+              group = "Isocronas Sector 4") %>% 
+  
+    addPolygons(data= isocronas15_sp %>% filter(cluster=="5"),
+              color = ~pal(cluster),
+              weight = 0.6,
+              opacity = 0.7,
+              fillColor = ~pal(cluster),
+              fillOpacity = 0.4,
+              group = "Isocronas Sector 5") %>% 
+  
+    addPolygons(data= isocronas15_sp %>% filter(cluster=="6"),
+              color = ~pal(cluster),
+              weight = 0.6,
+              opacity = 0.7,
+              fillColor = ~pal(cluster),
+              fillOpacity = 0.4,
+              group = "Isocronas Sector 6") %>% 
+
+  addPolygons(data= sectores_contorno,
+              color = "black",
+              weight = 0.6,
+              opacity = 0.7,
+              fillColor = "white",
+              fillOpacity = 0,
+              group = "Sectores Proximos") %>% 
+  
+
+  addCircleMarkers(data=puntos_aleatorios_sp,
+              fillColor = "black",
+              weight = 0.5,
+              color = "black",
+              fillOpacity = 0.5,
+              radius = 2,
+              group = "Puntos Aleatorios SP") %>% 
+  
+
+  addCircleMarkers(data = comercios_sp,
+              fillColor = "#f6b26b",
+              weight = 0.5,
+              color = "#f6b26b",
+              fillOpacity = 1,
+              radius = 2,
+              group = "Comercios SP")
+
+mapa
+
+transformar_todo_a_crs(22185)
+```
+
+<h2>
+  IRRIGACIÓN </br>
+  <small class="text-muted"> |  Calles comprendidas en los sectores y accesos </small>
+</h2>
+
+Intersectando el callejero con los polígonos del Barrio Mugica y de los sectores próximos puedo calcular la irrigación vial al polígono.
+
+<details><summary> Código inútil-arreglar </summary>
+```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
+#IMPORTO EL CALLEJERO:
+callejero = st_read("data/calles.shp") %>% 
+  st_transform(22185)
+
+#GENERO PUNTOS EN LAS INTERSECCIONES DE LAS CALLES CON LOS POLIGONOS DE LOS SECTORES PARA CALCULAR ACCESIBILIDAD
+
+# This gives you actual POINT geometries where the lines intersect polygon boundaries
+interseccion_callejero_bm = st_intersection(
+  st_cast(callejero, "LINESTRING"),
+  st_boundary(b_mugica) %>% 
+    st_transform(22185)) %>%
+  filter(st_geometry_type(.) == "POINT")  # ensures only POINT geometries
+
+interseccion_callejero_sp <- st_intersection(
+  st_cast(callejero, "LINESTRING"),
+  st_boundary(sectores_contorno) %>% 
+    st_transform(22185)) %>%
+  filter(st_geometry_type(.) == "POINT")  # ensures only POINT geometries
+
+
+# Then count per line if needed
+n_interseccion_callejero_bm = interseccion_callejero_bm %>%
+  st_drop_geometry() %>%
+  count()
+
+n_interseccion_callejero_sp <- interseccion_callejero_sp %>%
+  st_drop_geometry() %>%
+  group_by(cluster) %>%
+  summarise(n_intersecciones = n())
 
 
 ```
 </details>
+```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 
+pal = colorFactor("Blues", domain = sectores_prox$cluster)
+
+transformar_todo_a_crs(4326)
+
+mapa =
+leaflet(st_zm(sectores_prox)) %>%
+  addTiles() %>%
+  addProviderTiles(providers$CartoDB.Positron, group = "OSM",
+                   options = providerTileOptions(minzoom = 1, maxzoom = 15)) %>%
+  addProviderTiles(providers$Esri.WorldImagery, group = "Satelite") %>%
+  addLayersControl(
+    baseGroups = c("OSM","Satelite"), 
+    overlayGroups = c("Barrio Mugica","Accesos BM", "Sector Próximo 1", "Accesos SP 1", "Sector Próximo 2", "Accesos SP 2", "Sector Próximo 3", "Accesos SP 3", "Sector Próximo 4", "Accesos SP 4", "Sector Próximo 5", "Accesos SP 5", "Sector Próximo 6", "Accesos SP 6"))%>% 
+  
+
+
+  addPolygons(data= b_mugica,
+              color = "black",
+              weight = 1,
+              opacity = 0.7,
+              fillColor = "white",
+              fillOpacity = 0,
+              group = "Barrio Mugica") %>%
+  
+   addCircleMarkers(data = interseccion_callejero_bm,
+              fillColor = "#f6b26b",
+              weight = 0.5,
+              color = "#f6b26b",
+              fillOpacity = 1,
+              radius = 2,
+              group = "Accesos BM") %>% 
+  
+
+      addPolygons(data= sectores_contorno %>% filter(cluster=="1"),
+              color = "black",
+              weight = 1,
+              opacity = 0.7,
+              fillColor = "white",
+              fillOpacity = 0,
+              group = "Sector Próximo 1") %>% 
+  
+
+  addCircleMarkers(data = interseccion_callejero_sp%>% filter(cluster=="1"),
+              fillColor = "#f6b26b",
+              weight = 0.5,
+              color = "#f6b26b",
+              fillOpacity = 1,
+              radius = 2,
+              group = "Accesos SP 1") %>% 
+  
+  
+  addPolygons(data= sectores_contorno %>% filter(cluster=="2"),
+              color = "black",
+              weight = 1,
+              opacity = 0.7,
+              fillColor = "white",
+              fillOpacity = 0,
+              group = "Sector Próximo 2") %>% 
+  
+
+  addCircleMarkers(data = interseccion_callejero_sp%>% filter(cluster=="2"),
+              fillColor = "#f6b26b",
+              weight = 0.5,
+              color = "#f6b26b",
+              fillOpacity = 1,
+              radius = 2,
+              group = "Accesos SP 2") %>% 
+  
+  addPolygons(data= sectores_contorno %>% filter(cluster=="3"),
+              color = "black",
+              weight = 1,
+              opacity = 0.7,
+              fillColor = "white",
+              fillOpacity = 0,
+              group = "Sector Próximo 3") %>% 
+  
+
+  addCircleMarkers(data = interseccion_callejero_sp%>% filter(cluster=="3"),
+              fillColor = "#f6b26b",
+              weight = 0.5,
+              color = "#f6b26b",
+              fillOpacity = 1,
+              radius = 2,
+              group = "Accesos SP 3") %>% 
+  
+  addPolygons(data= sectores_contorno %>% filter(cluster=="4"),
+              color = "black",
+              weight = 1,
+              opacity = 0.7,
+              fillColor = "white",
+              fillOpacity = 0,
+              group = "Sector Próximo 4") %>% 
+  
+
+  addCircleMarkers(data = interseccion_callejero_sp%>% filter(cluster=="4"),
+              fillColor = "#f6b26b",
+              weight = 0.5,
+              color = "#f6b26b",
+              fillOpacity = 1,
+              radius = 2,
+              group = "Accesos SP 4") %>% 
+  
+  addPolygons(data= sectores_contorno %>% filter(cluster=="5"),
+              color = "black",
+              weight = 1,
+              opacity = 0.7,
+              fillColor = "white",
+              fillOpacity = 0,
+              group = "Sector Próximo 5") %>% 
+  
+
+  addCircleMarkers(data = interseccion_callejero_sp%>% filter(cluster=="5"),
+              fillColor = "#f6b26b",
+              weight = 0.5,
+              color = "#f6b26b",
+              fillOpacity = 1,
+              radius = 2,
+              group = "Accesos SP 5") %>% 
+  
+  addPolygons(data= sectores_contorno %>% filter(cluster=="6"),
+              color = "black",
+              weight = 1,
+              opacity = 0.7,
+              fillColor = "white",
+              fillOpacity = 0,
+              group = "Sector Próximo 6") %>% 
+  
+
+  addCircleMarkers(data = interseccion_callejero_sp%>% filter(cluster=="6"),
+              fillColor = "#f6b26b",
+              weight = 0.5,
+              color = "#f6b26b",
+              fillOpacity = 1,
+              radius = 2,
+              group = "Accesos SP 6")
+
+mapa
+
+transformar_todo_a_crs(22185)
+```
 
 
 ggplot(b_buffer) +

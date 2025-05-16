@@ -1,4 +1,32 @@
+
+# Archivos de sesión de R
 .Rproj.user
 .Rhistory
 .RData
 .Ruserdata
+
+# Carpeta de bibliotecas locales de renv (NO ignorar renv.lock)
+renv/library/
+renv/staging/
+
+# Sitio generado (puede regenerarse)
+_site/
+site_libs/
+docs/
+
+# Archivos temporales de render
+*.utf8.md
+*.knit.md
+*.nb.html
+*.log
+
+# Archivos del sistema (Windows/macOS)
+.DS_Store
+Thumbs.db
+
+# Archivos auxiliares
+.Rhistory
+.Rapp.history
+
+# Otros (si usás rsconnect o publish)
+.Rsconnect/
