@@ -1389,6 +1389,7 @@ Intersectando el callejero con los polígonos del Barrio Mugica y de los sectore
 callejero = st_read("data/calles.shp") %>% 
   st_transform(22185)
 
+
 #GENERO PUNTOS EN LAS INTERSECCIONES DE LAS CALLES CON LOS POLIGONOS DE LOS SECTORES PARA CALCULAR ACCESIBILIDAD
 
 # This gives you actual POINT geometries where the lines intersect polygon boundaries
@@ -1574,15 +1575,14 @@ n_interseccion_callejero_bm = n_interseccion_callejero_bm %>%
 n_interseccion_callejero_sp = n_interseccion_callejero_sp %>% 
   mutate(sector = paste0("Sector Proximo ", cluster))
 
-intersecciones_tabla = bind_rows(n_interseccion_callejero_sp, n_interseccion_callejero_bm) %>% 
-  select(sector, n_intersecciones) 
+intersecciones_tabla = bind_rows(n_interseccion_callejero_sp, n_interseccion_callejero_bm) 
 ```
 </details>
 
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 tabla =
-datatable(
-  intersecciones_tabla, 
+datatable(intersecciones_tabla%>% 
+            select(sector, n_intersecciones), 
   style = 'bootstrap', 
   class = 'cell-border stripe',
   options = list(
@@ -1603,6 +1603,74 @@ tabla
 ```
 
 
+
+Avenida:
+Calee:
+Pasaje:
+Pasillo: Ancho variable  de 2 m a 1,35 m.  No es calle oficial por ley 6129. 
+
+<details><summary> Código </summary>
+```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
+
+#FILTRO LOS QUE SON ALMACENES:
+callejero_bm = st_read("data/informacion_territorial.gpkg", layer = "calles") %>% 
+  st_transform(22185) %>% 
+  filter(!is.na(NOMBRE)) %>% 
+  mutate(tipo_c = ifelse(grepl("^Calle ", NOMBRE), "CALLE", "PASAJE"),
+         longitud_calle = length(geom)) %>% 
+  rename(geometry = geom) %>% 
+  group_by(tipo_c) %>% 
+  summarise(longitud_tot = sum(longitud_calle),
+            .groups = "drop") %>%
+  mutate(tipo_ratio = longitud_tot / sum(longitud_tot),
+         tipo_ratio = round(tipo_ratio,2),
+         barrio = "Barrio Mugica",
+         longitud_tot = longitud_tot)
+  
+
+#TIPO/ANCHO DE CALLES EN ST
+callejero_sp = st_intersection(callejero, sectores_contorno) %>% 
+  mutate(tipo_c = as.factor(tipo_c),
+         longitud_calle = length(geometry)) %>% 
+  group_by(cluster, tipo_c) %>% 
+  summarise(n_tipo = n(),
+            longitud_tot = sum(longitud_calle),
+            .groups = "drop") %>%
+  group_by(cluster) %>%
+  mutate(tipo_ratio = longitud_tot / sum(longitud_tot),
+         tipo_ratio = round(tipo_ratio,2),
+         barrio = paste0("Sector Proximo ", cluster),
+         longitud_tot = longitud_tot) %>%
+  ungroup()
+
+tipo_calles = bind_rows(callejero_sp, callejero_bm) 
+
+```
+</details>
+
+```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
+tabla =
+datatable(tipo_calles%>% 
+            select(barrio, tipo_c, longitud_tot, tipo_ratio) %>% 
+            st_drop_geometry(), 
+  style = 'bootstrap', 
+  class = 'cell-border stripe',
+  options = list(
+    searching = FALSE,
+    rownames = FALSE,
+    pageLength = nrow(tipo_calles),   # ← show all rows
+    dom = 't',                         # ← no search, no pagination, no length menu
+    scrollY = FALSE,
+    language = list(zeroRecords = "No existen datos para los requerimientos seleccionados"),
+    columnDefs = list(
+      list(targets = 0, visible = FALSE), # hide column 0
+      list(targets = c(1:4), width = '150px', className = 'dt-left'))
+    )
+  )
+
+tabla
+
+```
 
 <details><summary> Código </summary>
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
