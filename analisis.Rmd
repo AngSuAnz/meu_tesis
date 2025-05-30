@@ -96,6 +96,19 @@ $(document).ready(function() {
 });
 </script>
 
+<small class="text-muted"> En el marco de este estudio, se entenderá por mercado alimentario local al conjunto de condiciones y actores que determinan la disponibilidad, el acceso y el costo de los productos alimenticios básicos en un territorio determinado. </small>
+
+<h2>
+  CONCEPTOS CLAVE 
+</h2>
+
+Barrio popular, Asentamiento informal, Canasta básica, Mercado alimentario local, Accesibilidad, Desigualdad urbana, Fragmentación espacial, Política pública, Intervención urbana.
+
+
+<h2>
+  INTRODUCCIÓN </br>
+  <small class="text-muted"> |  Acceso al mercado alimentario, fundamentos e importancia en el proceso de integración  </small>
+</h2>
 
 Por medio de este estudio se busca analizar los factores que influyen en el costo de los insumos alimentarios cotidianos en barrios populares, tomando como caso de estudio al Barrio Padre Carlos Mugica (también conocido como Barrio 31), ubicado en la Ciudad Autónoma de Buenos Aires, Argentina.
 
@@ -111,13 +124,19 @@ En la Ciudad Autónoma de Buenos Aires, las villas y asentamientos presentan dis
 
 
 <h2>
-  EL PROBLEMA </br>
-  <small class="text-muted"> |  Acceso al mercado alimentario, fundamentos e importancia en el proceso de integración  </small>
+  EL PROBLEMA 
 </h2>
 
 A pesar de los avances en materia de urbanización e integración social, los residentes de barrios populares como el Barrio Padre Carlos Mugica en la Ciudad de Buenos Aires continúan enfrentando condiciones desiguales en el acceso a bienes esenciales, entre ellos los alimentos. Si bien el costo de los alimentos suele analizarse desde una perspectiva macroeconómica, en contextos urbanos fragmentados como este, las condiciones del entorno físico y socioeconómico pueden generar distorsiones a escala local que afectan directamente los precios y la disponibilidad de productos básicos.
 
 Actualmente, existe escasa evidencia empírica que permita comprender hasta qué punto factores como la localización, la accesibilidad, la densidad comercial o la seguridad inciden en el costo de los alimentos en barrios populares en comparación con sectores formales circundantes. Esta falta de información limita la capacidad de diseñar intervenciones específicas que mejoren la equidad territorial en el acceso a la alimentación. El presente estudio busca abordar esta brecha, explorando los determinantes locales del costo de una sub-canasta básica en el Barrio Mugica y su entorno inmediato.
+
+
+<h2>
+  LA PREGUNTA
+</h2>
+
+¿En qué medida factores urbanos como la accesibilidad, la integración física, la densidad comercial o la seguridad inciden en el funcionamiento del mercado alimentario local en barrios populares como el Barrio Padre Carlos Mugica, y qué tipo de intervenciones podrían contribuir a corregir sus distorsiones?
 
 
 <details><summary> Código </summary> 
