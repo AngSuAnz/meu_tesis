@@ -1168,37 +1168,67 @@ Comercios dentro del Barrio Mugica
 
 <details><summary> Código </summary>
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
-#VEO QUE CAPAS TENGO EN INFORMACION TERRITORIAL, NO LLAMAR TODO!
+#VEO QUE CAPAS TENGO EN INFORMACION TERRITORIAL, NO LLAMAR TODO.
 #print(st_layers("data/informacion_territorial.gpkg"))
 
-#FILTRO LOS QUE SON ALMACENES:
+#ME TRAIGO LA CAPA DE COMERCIOS Y LA FILTRO SEGÚN LOS QUE CORRESPONDEN A LA INVESTIGACIÓN.
 comercios1_bm = st_read("data/informacion_territorial.gpkg", layer = "comercios") %>% 
-  filter(Tipo == "Comercio", 
-         Rubro %in% "ALMACÉN") %>% 
-  st_transform(22185)
+  filter(Tipo == "Comercio",
+         grepl("ALMACÉN|Kiosko|Carnicer|Fiambrería|Verdulería", Rubro)) %>% 
+  st_transform(22185) %>% 
+  mutate(Altura = as.numeric(Altura)) %>% 
+  arrange(Calle, Altura) %>% 
+  clean_names()
+
+#GUARDO LAS OBSERVACIONES PARA IR A RELEVAR AL TERRITORIO INCORPORANDO LA INFORMACIÓN Y ACTUALIZANDO LOS DATOS YA QUE SON DEL 2022
+#st_write(comercios1_bm,"data/comercios1_bm.xlsx")
+
+comercios_bm_territorio = read_excel(
+  "data/comercios_bm_territorio.xlsx",
+  col_names = TRUE,
+  col_types = NULL,
+  na = "",
+  trim_ws = TRUE,
+  skip = 0) %>% 
+  clean_names()
+
+#FILTRO SOLO LAS DIRECCIONES Y LA GEOMETRIA DE LOS COMERCIOS1_bm:
+comercios1_bm = comercios1_bm %>% 
+  select(direccion)
+
+comercios_bm = left_join(comercios_bm_territorio, comercios1_bm, by = "direccion") %>% 
+  filter(!is.na(altura)) %>% 
+  mutate(relevado = if_else(is.na(leche), 0, 1),
+         cadena = as.factor("no"))
+
 
 #IMPORTO LOS COMERCIOS MAPEADOS DE CABA
 comercios_caba = st_read("data/meu_tesis_supermercados_caba.kml") %>% 
-  st_transform(22185)%>% 
   st_make_valid() %>% 
-  st_zm()
+  st_zm() %>% 
+  st_transform(22185)
 
 #FILTRO LOS COMERCIOS DE CABA PARA QUEDARME CON LOS QUE CAEN EN LAS ISOCRONAS DEL BM
 comercios2_bm = st_filter(comercios_caba, isocronas15_bm) %>% 
   rename(geom = geometry,
          Observaciones = Name) %>% 
-  mutate(Rubro = "Supermercado",
-         Tipo = "Comercio",
-         Subrubro = "Kiosco, Almacen y alimentos") %>% 
+  mutate(rubro = "Supermercado",
+         cadena= as.factor("si"),
+         relevado = 0) %>% 
   select(-Description)
 
-comercios_bm = bind_rows(comercios1_bm, comercios2_bm)
+comercios_bm = bind_rows(comercios_bm, comercios2_bm) %>% 
+  mutate(relevado = as.factor(relevado)) %>% 
+  filter(!st_is_empty(geom)) %>% 
+  st_as_sf()
 
-rm(comercios1_bm, comercios2_bm)
+rm(comercios1_bm, comercios2_bm, comercios_bm_territorio)
 ```
 </details>
 
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
+
+semaforo <- colorFactor(c("#f6b26b","#6aa84f"), domain = comercios_bm$relevado)
 
 transformar_todo_a_crs(4326)
 
@@ -1239,12 +1269,12 @@ leaflet(st_zm(sectores_prox)) %>%
 
   
   addCircleMarkers(data=comercios_bm,
-              fillColor = "#ffd966",
+              fillColor = ~semaforo(relevado),
               weight = 0.5,
-              color = "#ffd966",
-              fillOpacity = 0.8,
+              color = ~semaforo(relevado),
+              fillOpacity = 0.9,
               radius = 2,
-              popup = ~paste("<strong> RUBRO: </strong>", Rubro,"<br><strong>SECTOR:</strong>", Sector,"<br><strong>DIRECCIÓN:</strong>", Calle, " ", Altura),
+              popup = ~paste("<strong> RUBRO: </strong>", rubro,"<br><strong>SECTOR:</strong>", sector,"<br><strong>DIRECCIÓN:</strong>", direccion, "<br><strong>RELEVADO:</strong>",relevado,"<br><strong>CADENA:</strong>", cadena ),
               group = "Comercios BM") 
   
 
