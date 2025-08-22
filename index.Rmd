@@ -1342,7 +1342,7 @@ plot = ggplot(per_product, aes(x = reorder(product, pct), y = pct)) +
 </details>
 
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
-plot
+print(plot)
 ```
 
 ----------------------
@@ -1369,8 +1369,7 @@ iso_prod <- df_long %>%
 # 2) Etiqueta de grupo y filtros globales
 iso_tags <- iso_canasta %>% distinct(id_punto, grupo)  # grupo: "formal"/"informal"
 
-iso_prod2 <- iso_prod %>%
-  filter(!str_detect(id_punto, "^(3|6)_")) %>%          # tus exclusiones
+iso_prod2 <- iso_prod %>%         
   inner_join(iso_tags, by = "id_punto") %>%
   mutate(grupo = factor(grupo, levels = c("formal","informal"))) %>%
   # headroom dentro de isócrona × producto
@@ -1422,7 +1421,7 @@ margen_plot = ggplot(per_prod_head, aes(x = reorder(product, pct), y = pct)) +
 </details>
 
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
-margen_plot
+print(margen_plot)
 ```
 
 <details><summary> Código </summary>
@@ -1481,8 +1480,6 @@ iso_prod <- df_long %>%
 iso_tags <- iso_canasta %>% distinct(id_punto, grupo)   # "formal"/"informal"
 
 iso_prod2 <- iso_prod %>%
-  # excluye isócronas con poca info si corresponde
-  filter(!str_detect(id_punto, "^(3|6)_")) %>%
   inner_join(iso_tags, by = "id_punto") %>%
   mutate(
     grupo = factor(grupo, levels = c("formal","informal")),
@@ -1532,7 +1529,7 @@ carga_plot = ggplot(per_prod_carga, aes(x = reorder(product, pct), y = pct)) +
   labs(
     x = NULL,
     y = "Diferencia de carga (%) — informal − formal",
-    title = "carga por producto (p10/p90)",
+    title = "Carga por producto (p10/p90)",
     subtitle = "Puntos = diferencia porcentual; barras = IC95% (Welch t-test sobre log-ratios)"
   ) +
   theme_minimal()
@@ -1540,7 +1537,7 @@ carga_plot = ggplot(per_prod_carga, aes(x = reorder(product, pct), y = pct)) +
 </details>
 
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
-carga_plot
+print(carga_plot)
 ```
 
 
