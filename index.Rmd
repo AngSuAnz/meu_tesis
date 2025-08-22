@@ -360,7 +360,7 @@ sectores_prox$sector = as.numeric(kmeans_result$cluster)
 
 sectores_prox = sectores_prox%>% 
                 filter(!grepl("3|6", sector)) %>% 
-                mutate(sector = case_when(
+                mutate(sector = case_when(  #renombro los sectores por TOC, para que los numeros se vean en orden en el mapa...
                             sector == 2 ~ 7,
                             sector == 5 ~ 8,
                             sector == 4 ~ 9,
@@ -649,7 +649,6 @@ isocronas05_sp = st_read("data/isocronas05_sp.geojson")%>%
 
 isocronas05_tot = bind_rows(isocronas05_bm,isocronas05_sp)
 
-rm(lista_isocronas_bm_15,lista_isocronas_sp_15,lista_isocronas_bm_10,lista_isocronas_sp_10,lista_isocronas_bm_05,lista_isocronas_sp_05,group_labels,group_sizes)
 ```
   
 </details>
@@ -822,7 +821,8 @@ isocronas13_tot <- st_buffer(isocronas15_tot, dist = -166.66)%>%
 
 paradas_tot = st_read("data/paradas_tot.geojson")%>% 
   rename(geometry_parada=geometry) %>% 
-  st_transform(22185)
+  st_transform(22185) 
+
 
 ```
 </details>
@@ -1173,29 +1173,29 @@ Comercios por isocrona
 ## Comercios por isocrona
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 #CRUZO LOS COMERCIOS CON LAS ISOCRONAS
-
-# Point–polygon join: repeat points once per intersecting isochrone
 comercios_por_isocrona = st_join(comercios_tot, isocronas15_tot, join = st_intersects, left = TRUE)
 
+#CALCULO LA CANTIDAD DE COMERCIOS POR ISOCRONA
 n_comercios_x_iso = comercios_por_isocrona %>% 
   group_by(id_isocrona) %>% 
   summarise(n_comercios = n())
 
+
 vars = c("leche","harina","azucar","arroz","papa","fiambre_jc", "carne_pic")
 
-# 2) Long format: one row per (isochrone, store, product)
+# ORGANIZO LA INFORMACION POR ISOCRONA, COMERCIO, PRODUCTO (LARGO)
 df_long <- comercios_por_isocrona %>%
   select(id_isocrona, id_comercio, all_of(vars)) %>%
   pivot_longer(cols = all_of(vars), names_to = "product", values_to = "price") %>%
   filter(!is.na(price) & price > 0)
 
-# 3) (A) Least-Cost Basket per isochrone
-# Use a robust floor (p10) instead of raw min to avoid outliers/mistakes
+# CANASTA MAS ECONOMICA POR ISOCRONA
+# USO (p10) DE BASE EN LUGAR DE LOS VALORES MINIMOS PARA EVITAR ERRORES/OUTLIERS
 iso_prod_floor <- df_long %>%
   group_by(id_isocrona, product) %>%
   summarise(price_floor = quantile(price, 0.10, na.rm = TRUE), .groups = "drop")
 
-# Sum basket (unweighted). For a multiplicative index, use geometric mean of price relatives.
+# SUMA DE LA CANASTA (unweighted). PARA UN INDICE MULTIPLICATIVO, USAR MEDIA GEOMETRICA DE LOS PRECIOS RELATIVOS.
 lcbi <- iso_prod_floor %>%
   group_by(id_isocrona) %>%
   summarise(
@@ -1205,8 +1205,7 @@ lcbi <- iso_prod_floor %>%
     .groups = "drop"
   )
 
-# 4) (B) Headroom / dispersion per isochrone
-# Compute p90 and p10 of log prices (more stable), then average spread across products
+# MARGEN / DISPERSION POR ISOCRONA. COMPUTO p90 and p10 DE LOS PRECIOS LOG (MAS ESTABLE), DESPUES CALCULO LA DISPERSION MEDIA POR PRODUCTO
 iso_prod_spread <- df_long %>%
   mutate(logp = log(price)) %>%
   group_by(id_isocrona, product) %>%
@@ -1230,6 +1229,8 @@ headroom <- iso_prod_spread %>%
 #iso_metrics <- lcbi %>%
 #  left_join(headroom, by = "id_isocrona")
 ```
+
+
 ```{r}
 # 1) Filter and flag groups
 lcbi2 <- lcbi %>%                                # <- your table with id_isocrona, basket_* and n_products
@@ -1255,25 +1256,25 @@ sumtab <- lcbi2 %>%
 print(sumtab)
 
 # 3) Robust group tests (Mann–Whitney/Wilcoxon rank-sum)
-wilcox_sum <- wilcox.test(basket_sum_min ~ group, data = lcbi2, exact = FALSE)
-wilcox_gm  <- wilcox.test(basket_gm_min  ~ group, data = lcbi2, exact = FALSE)
+#wilcox_sum <- wilcox.test(basket_sum_min ~ group, data = lcbi2, exact = FALSE)
+#wilcox_gm  <- wilcox.test(basket_gm_min  ~ group, data = lcbi2, exact = FALSE)
 
-wilcox_sum$p.value; wilcox_gm$p.value
+#wilcox_sum$p.value; wilcox_gm$p.value
 ```
 ```{r}
 library(effsize)
 
 # Wilcoxon rank-sum (robust to non-normality)
-wilcox.test(basket_sum_min ~ group, data = lcbi2, exact = FALSE)
-wilcox.test(basket_gm_min  ~ group, data = lcbi2, exact = FALSE)
+#wilcox.test(basket_sum_min ~ group, data = lcbi2, exact = FALSE)
+#wilcox.test(basket_gm_min  ~ group, data = lcbi2, exact = FALSE)
 
 # t-test on logs → interpretable as % differences
-t.test(log(basket_sum_min) ~ group, data = lcbi2)
-t.test(log(basket_gm_min)  ~ group, data = lcbi2)
+#t.test(log(basket_sum_min) ~ group, data = lcbi2)
+#t.test(log(basket_gm_min)  ~ group, data = lcbi2)
 
 # Effect size: Cliff's delta (nonparametric)
-cliff.delta(basket_sum_min ~ group, data = lcbi2)
-cliff.delta(basket_gm_min  ~ group, data = lcbi2)
+#cliff.delta(basket_sum_min ~ group, data = lcbi2)
+#cliff.delta(basket_gm_min  ~ group, data = lcbi2)
 ```
 Main finding (poverty penalty on the least-cost basket)
 
@@ -1286,183 +1287,7 @@ Geometric-mean basket: the slum’s basket is ~9.73% higher
 Why Wilcoxon differs for the geometric mean: Wilcoxon tests median differences on the raw scale and, with small n and overlapping distributions, it has less power. The t-test on logs is the most aligned with the geometric-mean construct (and is what you should report as the primary test for basket_gm_min).
 
 After excluding isochrones starting with 3_ and 6_, the least-cost basket for staples is ~54% higher in slum isochrones than in adjacent formal areas (95% CI: +40% to +68%). Using a geometric-mean basket (robust central tendency), the slum penalty is ~9.7% (95% CI: +5.0% to +14.7%).
-```{r}
-# convert a log-difference CI into a % ratio CI
-to_pct <- function(x) 100*(exp(x) - 1)
 
-ci_gm_sorted  <- sort(ci_gm)   # was c(upper, lower)
-ci_sum_sorted <- sort(ci_sum)
-
-pct_gm   <- to_pct(diff_gm)
-pct_gmCI <- to_pct(ci_gm_sorted)
-
-pct_sum   <- to_pct(diff_sum)
-pct_sumCI <- to_pct(ci_sum_sorted)
-
-tibble::tibble(
-  metric   = c("basket_gm_min", "basket_sum_min"),
-  pct_diff = c(pct_gm, pct_sum),
-  ci_low   = c(pct_gmCI[1], pct_sumCI[1]),
-  ci_high  = c(pct_gmCI[2], pct_sumCI[2])
-)
-
-```
-Interpretable results (slum vs. formal)
-
-Geometric-mean basket: +9.73% (95% CI +5.0% to +14.7%).
-
-Sum of cheapest items: +53.62% (95% CI +40.1% to +68.5%).
-
-Excluding 3_/6_ isochrones, the least-cost basket is ~54% higher in slum isochrones (95% CI: +40% to +68%). Using a geometric-mean basket, the slum premium is ~9.7% (95% CI: +5.0% to +14.7%).
-
-```{r}
-res <- tibble::tribble(
-  ~metric,           ~pct_diff, ~ci_low, ~ci_high,
-  "basket_gm_min",    9.728559,  5.003404, 14.66635,
-  "basket_sum_min",  53.618874, 40.073234, 68.47443
-)
-
-ggplot(res, aes(x = reorder(metric, pct_diff), y = pct_diff)) +
-  geom_pointrange(aes(ymin = ci_low, ymax = ci_high)) +
-  geom_hline(yintercept = 0, linetype = 2) +
-  coord_flip() +
-  labs(x = NULL, y = "Slum premium (%)",
-       title = "Least-cost basket premium (slum vs. formal)",
-       subtitle = "Point estimates with 95% CIs")
-
-```
-
-```{r}
-min_obs_per_iso_prod <- 3    # require ≥3 price points per (isochrone, product) to compute p10
-
-# Long data of cheapest-available prices per store/product
-df_long <- comercios_por_isocrona %>%
-  select(id_isocrona, id_comercio, all_of(vars)) %>%
-  pivot_longer(cols = all_of(vars), names_to = "product", values_to = "price") %>%
-  filter(is.finite(price) & price > 0)
-
-# Floor price (robust min via p10) per isochrone × product
-iso_prod <- df_long %>%
-  group_by(id_isocrona, product) %>%
-  filter(n() >= min_obs_per_iso_prod) %>%
-  summarise(price_floor = quantile(price, 0.10, na.rm = TRUE), .groups = "drop")
-
-# Flag groups; drop 3_* and 6_*
-iso_prod2 <- iso_prod %>%
-  filter(!str_detect(id_isocrona, "^(3|6)_")) %>%
-  mutate(group = if_else(str_starts(id_isocrona, "0"), "slum", "formal"),
-         group = factor(group, levels = c("formal","slum")))  # ensure order for tests
-
-# Per-product Welch t-tests on log floor price
-per_product <- iso_prod2 %>%
-  mutate(log_floor = log(price_floor)) %>%
-  group_by(product) %>%
-  group_modify(~{
-    tt <- t.test(log_floor ~ group, data = .x)  # difference = mean(formal) - mean(slum)
-    m_formal <- unname(tt$estimate[1]); m_slum <- unname(tt$estimate[2])
-    diff_log <- m_slum - m_formal
-    ci_s_f   <- -rev(tt$conf.int)              # convert CI to (slum - formal)
-    tibble(
-      n_formal = sum(.x$group=="formal"),
-      n_slum   = sum(.x$group=="slum"),
-      diff_log = diff_log,
-      pct_diff = 100*(exp(diff_log) - 1),
-      ci_low   = 100*(exp(sort(ci_s_f)[1]) - 1),
-      ci_high  = 100*(exp(sort(ci_s_f)[2]) - 1),
-      p_value  = tt$p.value
-    )
-  }) %>%
-  ungroup() %>%
-  arrange(desc(pct_diff))
-
-# Contributions to overall GM gap (coverage-weighted)
-per_product <- per_product %>%
-  mutate(w = pmin(n_formal, n_slum),
-         contrib = w*diff_log) %>%
-  mutate(contrib_share = contrib / sum(contrib, na.rm = TRUE))
-
-per_product
-```
-```{r}
-ggplot(per_product, aes(x = reorder(product, pct_diff), y = pct_diff)) +
-  geom_pointrange(aes(ymin = ci_low, ymax = ci_high)) +
-  geom_hline(yintercept = 0, linetype = 2) +
-  coord_flip() +
-  labs(x = NULL, y = "Slum premium (%)",
-       title = "Per-product least-cost floor price (p10) — slum vs formal",
-       subtitle = "Point estimates with 95% CIs (Welch t-tests on log prices)")
-
-```
-
-```{r}
-ggplot(per_product, aes(x = reorder(product, contrib_share), y = 100*contrib_share)) +
-  geom_col() +
-  coord_flip() +
-  labs(x = NULL, y = "Share of GM gap (%)",
-       title = "Product contributions to the geometric-mean basket gap",
-       subtitle = "Coverage-weighted (by matched isochrone counts)")
-
-```
-```{r}
-# --- helper: build LCBI from a product set ---
-compute_lcbi <- function(data, vars, min_obs_per_iso_prod = 3){
-  df_long <- data %>%
-    select(id_isocrona, id_comercio, all_of(vars)) %>%
-    pivot_longer(all_of(vars), names_to = "product", values_to = "price") %>%
-    filter(is.finite(price), price > 0)
-
-  iso_prod_floor <- df_long %>%
-    group_by(id_isocrona, product) %>%
-    filter(n() >= min_obs_per_iso_prod) %>%
-    summarise(price_floor = quantile(price, 0.10, na.rm = TRUE), .groups = "drop")
-
-  iso_prod_floor %>%
-    filter(!str_detect(id_isocrona, "^(3|6)_")) %>%
-    group_by(id_isocrona) %>%
-    summarise(
-      basket_sum_min = sum(price_floor, na.rm = TRUE),
-      basket_gm_min  = exp(mean(log(price_floor), na.rm = TRUE)),
-      n_products     = n(),
-      .groups = "drop"
-    ) %>%
-    mutate(group = if_else(str_starts(id_isocrona, "0"), "slum", "formal"))
-}
-
-# --- helper: report % diff (slum − formal) with CIs from t-tests on logs ---
-report_gap <- function(lcbi_tbl){
-  conv <- function(tt){
-    diff_log <- -diff(tt$estimate)                 # slum − formal
-    ci_log   <- sort(-tt$conf.int)
-    c(pct = 100*(exp(diff_log)-1),
-      lo  = 100*(exp(ci_log[1])-1),
-      hi  = 100*(exp(ci_log[2])-1),
-      p   = unname(tt$p.value))
-  }
-  t_sum <- t.test(log(basket_sum_min) ~ group, data = lcbi_tbl)
-  t_gm  <- t.test(log(basket_gm_min)  ~ group, data = lcbi_tbl)
-
-  tibble::tibble(
-    metric   = c("basket_sum_min","basket_gm_min"),
-    pct_diff = c(conv(t_sum)["pct"], conv(t_gm)["pct"]),
-    ci_low   = c(conv(t_sum)["lo"],  conv(t_gm)["lo"]),
-    ci_high  = c(conv(t_sum)["hi"],  conv(t_gm)["hi"]),
-    p_value  = c(conv(t_sum)["p"],   conv(t_gm)["p"])
-  )
-}
-
-# --- run with and without meat ---
-vars_all     <- c("leche","harina","azucar","arroz","papa","fiambre_jc","carne_pic")
-vars_no_meat <- setdiff(vars_all, "carne_pic")
-
-lcbi_all     <- compute_lcbi(comercios_por_isocrona, vars_all)
-lcbi_nomeat  <- compute_lcbi(comercios_por_isocrona, vars_no_meat)
-
-res_all    <- report_gap(lcbi_all)
-res_nomeat <- report_gap(lcbi_nomeat)
-
-res_all
-res_nomeat
-```
 
 
 
@@ -1808,7 +1633,7 @@ delitos_bm = st_intersection(delitos_caba,isocronas15_bm)%>%
 rm(delitos,delitos_caba)
 
 delitos_sp_n = delitos_sp %>% 
-  group_by(id_isocrona,sector,tipo) %>% 
+  group_by(id_punto,sector,tipo) %>% 
   summarise(cantidad=n())
 
 delitos_bm_n = delitos_bm %>% 
