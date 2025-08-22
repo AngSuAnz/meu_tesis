@@ -75,7 +75,7 @@ $(document).ready(function() {
 });
 </script>
 
-En la Ciudad Autónoma de Buenos Aires, las villas y asentamientos informales presentan distintos grados de integración al tejido urbano formal. Mientras algunos se encuentran físicamente insertos en zonas consolidadas, con mayor conectividad vial y cercanía a nodos comerciales, otros se desarrollan en condiciones de mayor aislamiento o fragmentación, producto de barreras físicas, urbanísticas o socioeconómicas. Esta heterogeneidad territorial genera diferencias sustantivas en el acceso efectivo a bienes y servicios básicos, incluyendo la oferta de alimentos, cuya disponibilidad, diversidad y precio pueden variar sensiblemente según el grado de integración urbana del barrio.
+En la Ciudad Autónoma de Buenos Aires, las villas y asentamientos informales presentan distintos grados de integración al tejido urbano formal. Mientras algunos se encuentran físicamente insertos en zonas consolidadas, con mayor conectividad vial y cercanía a nodos comerciales, otros se desarrollan en condiciones de mayor aislamiento o fragmentación, producto de barreras físicas urbanas. Ésta heterogeneidad territorial genera grandes diferencias en el acceso efectivo a bienes y servicios básicos, incluyendo la oferta de alimentos, cuya disponibilidad, diversidad y precio pueden variar sensiblemente según el grado de integración urbana del barrio.
 
 Desde esta perspectiva, resulta pertinente preguntarse en qué medida el costo de los insumos alimentarios en barrios populares está condicionado por factores como la accesibilidad física, la presencia de circuitos de comercialización formales o informales, el nivel de conectividad con zonas de mayor actividad económica, y las condiciones de seguridad o infraestructura urbana. Este trabajo buscará abordar dicha problemática a través del caso del Barrio Padre Carlos Mugica, combinando análisis espacial y recolección de datos cuantitativos para identificar patrones y correlaciones que permitan una mejor comprensión del fenómeno y orienten intervenciones de política pública en materia alimentaria y urbana.
 
@@ -95,6 +95,8 @@ Tomo el polígono del barrio Padres Carlos Mugica y el de la ciudad de Buenos Ai
 Como el objetivo es observar el acceso a la ciudad que tiene el Barrio Mugica en comparación a la ciudad formal circundante, comienzo creando un buffer a 1500 metros del Barrio Mugica, y tomo los radios censales (censo 2022) que se intersectan con el mismo.
 
 <details><summary> Código </summary> 
+## Barrio 
+
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 #CARGO LAS BASES
 ciudad = st_read("data/perimetro.geojson") %>% 
@@ -124,6 +126,7 @@ transformar_todo_a_crs <- function(crs_destino = 4326) {
 }
 
 ```
+## Buffer
 
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 #CREO UN BUFFER EN TORNO AL BARRIO PARA PODER SELECCIONAR LOS RADIOS CENSALES PRÓXIMOS:
@@ -250,6 +253,7 @@ Para filtrar los radios censales calculo la densidad de viviendas por radio cens
 El mapa resultante es el siguiente:
 
 <details><summary> Código </summary>
+## Radios Censales y Densidad de viviendas
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 
 #INCORPORO LA INFORMACION SOBRE VIVIENDAS DE LA BASE DE RADIOS CENSALES:
@@ -281,7 +285,7 @@ rm(list = c("radios_filtrados", "radios_viviendas", "viviendas", "b_buffer"), en
 ```
 </details>
 
-Imagen 3. Radios censales seleccionados.
+Imagen 3. Radios censales pre-seleccionados.
 
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 
@@ -328,6 +332,8 @@ transformar_todo_a_crs(22185)
 Calculo la sumatoria de los radios formales elegidos, y la divido entre el área del Barrio Mugica para agrupar los radios en "sectores próximos", y conformar así unidades comparables.
 
 <details><summary> Código </summary>
+
+## Definicion de sectores
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 #FILTRO LOS RADIOS CENSALES FORMALES
 radios_formal = radios_selec %>% 
@@ -350,7 +356,22 @@ kmeans_result = kmeans(centros, centers = 6)
 
 # AGREGO EL ID DEL SECTOR A LA BASE
 sectores_prox = radios_formal
-sectores_prox$sector = as.numeric(kmeans_result$cluster)
+sectores_prox$sector = as.numeric(kmeans_result$cluster) 
+
+sectores_prox = sectores_prox%>% 
+                filter(!grepl("3|6", sector)) %>% 
+                mutate(sector = case_when(
+                            sector == 2 ~ 7,
+                            sector == 5 ~ 8,
+                            sector == 4 ~ 9,
+                            sector == 1 ~ 10,
+                            .default = sector),
+                       sector = case_when(
+                            sector == 7 ~ 1,
+                            sector == 8 ~ 2,
+                            sector == 9 ~ 3,
+                            sector == 10 ~ 4,
+                            .default = sector))
 
 radios_informal = radios_selec %>% 
   filter(formal == "0") %>% 
@@ -367,7 +388,8 @@ sectores_tot = radios_tot %>%
   group_by(sector) %>% 
   summarise(viviendas = sum(viviendas),
             area_km2_s = sum(area_km2_r),
-            densidad_viviendas = viviendas/area_km2_s)
+            densidad_viviendas = viviendas/area_km2_s)%>% 
+  arrange(sector)
 
 rm(kmeans_result,area_formal,cantidad_sectores_prox, centros)
 ```
@@ -375,7 +397,7 @@ rm(kmeans_result,area_formal,cantidad_sectores_prox, centros)
 
 Los sectores próximos se agrupan entonces de la siguiente manera, y serán comparadas sus características con las del Barrio Mugica:
 
-Imagen 5. Radios censales seleccionados agrupados en el Barrio Mugica y 6 sectores próximos.
+Imagen 5. Radios censales seleccionados agrupados en el Barrio Mugica y 4 sectores próximos.
 
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 
@@ -429,6 +451,7 @@ En primer lugar, trazo isocronas desde 5 puntos aleatorios definidos dentro del 
 Tomo los radios censales seleccionados y agrupados previamente y defino los polígonos totales de los sectores próximos.
 
 <details><summary> Código </summary>
+## Puntos Aleatorios e isocronas bm
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 #LLAMO A LOS SECTORES DEL BARRIO MUGICA PARA QUE LOS PUNTOS ALEATORIOS ESTÉN MÁS DISTRIBUIDOS. TODA ESTA PARTE LA HAGO UNA SOLA VEZ.
 
@@ -462,15 +485,61 @@ puntos_aleatorios_bm = st_read("data/puntos_aleatorios_bm.geojson") %>%
 
 #st_write(isocronas15_bm, "data/isocronas15_bm.geojson")
 
+#--------------------------
+
+#CONSTRUYO ISOCRONAS DE 10M
+#lista_isocronas_bm_10 <- lapply(puntos_aleatorios_bm$geometry, function(point) {
+#  osrmIsochrone(loc = st_coordinates(point),
+#                breaks = seq(from = 0, to = 10, by = 10),
+#                res = 40,
+#                osrm.profile = "foot")
+#})
+
+#Combino las isocronas
+#isocronas10_bm = do.call(rbind, lista_isocronas_bm_10)
+
+#st_write(isocronas10_bm, "data/isocronas10_bm.geojson")
+
+#--------------------------
+
+#CONSTRUYO ISOCRONAS DE 05M
+#lista_isocronas_bm_05 <- lapply(puntos_aleatorios_bm$geometry, function(point) {
+#  osrmIsochrone(loc = st_coordinates(point),
+#                breaks = seq(from = 0, to = 5, by = 5),
+#                res = 40,
+#                osrm.profile = "foot")
+#})
+
+#Combino las isocronas
+#isocronas05_bm = do.call(rbind, lista_isocronas_bm_05)
+
+#st_write(isocronas05_bm, "data/isocronas05_bm.geojson")
+
+#--------------------------------------------------------------------------------------
+
 isocronas15_bm = st_read("data/isocronas15_bm.geojson")%>% 
                     st_transform(22185) %>% 
                     st_make_valid()%>% 
                     mutate(id_isocrona = paste0("0_",as.character(row_number())),
                            sector = 0) %>%
                     select(sector,id_isocrona) 
+
+isocronas10_bm = st_read("data/isocronas10_bm.geojson")%>% 
+                    st_transform(22185) %>% 
+                    st_make_valid()%>% 
+                    mutate(id_isocrona = paste0("0_",as.character(row_number())),
+                           sector = 0) %>%
+                    select(sector,id_isocrona) 
+
+isocronas05_bm = st_read("data/isocronas05_bm.geojson")%>% 
+                    st_transform(22185) %>% 
+                    st_make_valid()%>% 
+                    mutate(id_isocrona = paste0("0_",as.character(row_number())),
+                           sector = 0) %>%
+                    select(sector,id_isocrona)
                     
 ```
-
+## Puntos Aleatorios e isocronas sp
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 #ISOCRONAS SECTORES PROXIMOS
 sectores_contorno = sectores_prox %>% 
@@ -478,7 +547,7 @@ sectores_contorno = sectores_prox %>%
   summarise()
 
 #GENERO Y GUARDO LOS PTOS ALEATORIOS PORQUE SINO CADA VEZ QUE CORRO EL CODIGO, SON NUEVOS:
-#puntos_aleatorios_sp <- sectores_contorno %>%
+#puntos_aleatorios_sp = sectores_contorno %>%
 #  rowwise() %>%
 #  mutate(puntos = list(st_sample(geometry, size = 9, type = "random"))) %>%
 #  ungroup() %>%
@@ -500,18 +569,59 @@ puntos_aleatorios_sp = st_read("data/puntos_aleatorios_sp.geojson") %>%
   mutate(sector=as.numeric(sector))
 
 #CONSTRUYO ISOCRONAS DE 15M
-#lista_isocronas_sp_15 <- lapply(puntos_aleatorios_sp$geometry, function(point) {
-#  osrmIsochrone(loc = st_coordinates(point),
-#                breaks = seq(from = 0, to = 15, by = 15),
-#                res = 40,
-#                osrm.profile = "foot")
+#lista_isocronas_sp_15_2 = lapply(seq_len(nrow(puntos_aleatorios_sp)), function(i) {
+#  pt  <- puntos_aleatorios_sp[i, ]  # one-row sf (POINT)
+#  iso <- osrmIsochrone(
+#    loc = pt,                 # pass the sf row directly (no lon/lat cols needed)
+#    breaks = c(0, 15),
+#    res = 40,
+#    osrm.profile = "foot"
+#  )
+#  mutate(iso, id_punto = pt$id_punto, sector = pt$sector)
 #})
 
-#COMBINO LAS ISOCRONAS
-#isocronas15_sp = do.call(rbind, lista_isocronas_sp_15)
+# Combine sf rows
+#isocronas15_sp_2 = do.call(rbind, lista_isocronas_sp_15_2)
 
-#st_write(isocronas15_sp, "data/isocronas15_sp.geojson")
+#st_write(isocronas15_sp_2, "data/isocronas15_sp.geojson")
 
+#--------------------------------------------------------
+#CONSTRUYO ISOCRONAS DE 10M
+#lista_isocronas_sp_10_2 = lapply(seq_len(nrow(puntos_aleatorios_sp)), function(i) {
+#  pt  <- puntos_aleatorios_sp[i, ]  # one-row sf (POINT)
+#  iso <- osrmIsochrone(
+#    loc = pt,                 # pass the sf row directly (no lon/lat cols needed)
+#    breaks = seq(from = 0, to = 10, by = 10),
+#    res = 40,
+#    osrm.profile = "foot"
+#  )
+#  mutate(iso, id_punto = pt$id_punto, sector = pt$sector)
+#})
+
+# Combine sf rows
+#isocronas10_sp_2 = do.call(rbind, lista_isocronas_sp_10_2)
+
+#st_write(isocronas10_sp_2, "data/isocronas10_sp.geojson")
+
+#--------------------------------------------------------
+#CONSTRUYO ISOCRONAS DE 5M
+#lista_isocronas_sp_05_2 = lapply(seq_len(nrow(puntos_aleatorios_sp)), function(i) {
+#  pt  <- puntos_aleatorios_sp[i, ]  # one-row sf (POINT)
+#  iso <- osrmIsochrone(
+#    loc = pt,                 # pass the sf row directly (no lon/lat cols needed)
+#    breaks = seq(from = 0, to = 5, by = 5),
+#    res = 40,
+#    osrm.profile = "foot"
+#  )
+#  mutate(iso, id_punto = pt$id_punto, sector = pt$sector)
+#})
+
+# Combine sf rows
+#isocronas05_sp_2 = do.call(rbind, lista_isocronas_sp_05_2)
+
+#st_write(isocronas05_sp_2, "data/isocronas05_sp.geojson")
+
+#--------------------------------------------------------------------------------------
 
 isocronas15_sp = st_read("data/isocronas15_sp.geojson")%>% 
                     st_transform(22185) %>% 
@@ -520,25 +630,27 @@ isocronas15_sp = st_read("data/isocronas15_sp.geojson")%>%
 
 isocronas15_tot = bind_rows(isocronas15_bm,isocronas15_sp)
 
-rm(lista_isocronas_bm_15,lista_isocronas_sp_15,group_labels,group_sizes)
+
+#---------------------------------------------------------
+
+isocronas10_sp = st_read("data/isocronas10_sp.geojson")%>% 
+                    st_transform(22185) %>% 
+                    st_make_valid() %>% 
+                    mutate(sector=as.numeric(sector))
+
+isocronas10_tot = bind_rows(isocronas10_bm,isocronas10_sp)
+
+#---------------------------------------------------------
+
+isocronas05_sp = st_read("data/isocronas05_sp.geojson")%>% 
+                    st_transform(22185) %>% 
+                    st_make_valid() %>% 
+                    mutate(sector=as.numeric(sector))
+
+isocronas05_tot = bind_rows(isocronas05_bm,isocronas05_sp)
+
+rm(lista_isocronas_bm_15,lista_isocronas_sp_15,lista_isocronas_bm_10,lista_isocronas_sp_10,lista_isocronas_bm_05,lista_isocronas_sp_05,group_labels,group_sizes)
 ```
-
--------------------------------------------------------------------------------
-# Define your pattern of group sizes
-group_sizes <- c(9, 9, 9, 9, 9, 9)
-
-# Generate the group labels: 1, 2, 3, ...
-group_labels <- rep(seq_along(group_sizes), times = group_sizes)
-
-# Assign to the dataframe
-isocronas15_sp$group_id <- group_labels
-isocronas15_sp$subgroup_id <- rep(1:9, length.out = nrow(df))
-
-isocronas15_sp = isocronas15_sp %>% 
-  mutate(id_isocrona = paste0(as.character(group_id),"_", as.character(subgroup_id))) %>% 
-  rename(sector = group_id) %>% 
-  select(sector,id_isocrona)
-  ------------------------------------------------------------------------------------
   
 </details>
 
@@ -569,7 +681,7 @@ leaflet(st_zm(sectores_prox)) %>%
   addProviderTiles(providers$Esri.WorldImagery, group = "Satelite") %>%
   addLayersControl(
     baseGroups = c("OSM","Satelite"), 
-    overlayGroups = c("Isocronas Barrio Mugica","Barrio Mugica", "Puntos Aleatorios BM", "Isocronas Sector 1", "Isocronas Sector 2", "Isocronas Sector 3", "Isocronas Sector 4", "Isocronas Sector 5", "Isocronas Sector 6", "Sectores Proximos", "Puntos Aleatorios SP"))%>% 
+    overlayGroups = c("Isocronas Barrio Mugica","Barrio Mugica", "Puntos Aleatorios BM", "Isocronas Sector 1", "Isocronas Sector 2", "Isocronas Sector 3", "Isocronas Sector 4", "Sectores Proximos", "Puntos Aleatorios SP"))%>% 
   
   addPolygons(data= isocronas15_bm,
               color = "#a64d79",
@@ -619,22 +731,6 @@ leaflet(st_zm(sectores_prox)) %>%
               fillColor = ~pal(sector),
               fillOpacity = 0.4,
               group = "Isocronas Sector 4") %>% 
-  
-    addPolygons(data= isocronas15_sp %>% filter(sector=="5"),
-              color = ~pal(sector),
-              weight = 0.6,
-              opacity = 0.7,
-              fillColor = ~pal(sector),
-              fillOpacity = 0.4,
-              group = "Isocronas Sector 5") %>% 
-  
-    addPolygons(data= isocronas15_sp %>% filter(sector=="6"),
-              color = ~pal(sector),
-              weight = 0.6,
-              opacity = 0.7,
-              fillColor = ~pal(sector),
-              fillOpacity = 0.4,
-              group = "Isocronas Sector 6") %>% 
 
   addPolygons(data= sectores_contorno,
               color = "black",
@@ -650,6 +746,7 @@ leaflet(st_zm(sectores_prox)) %>%
               color = "black",
               fillOpacity = 0.5,
               radius = 2,
+              popup = ~paste("<strong> ID_punto: </strong>", id_punto),
               group = "Puntos Aleatorios BM") %>%
 
   addCircleMarkers(data=puntos_aleatorios_sp,
@@ -658,6 +755,7 @@ leaflet(st_zm(sectores_prox)) %>%
               color = "black",
               fillOpacity = 0.5,
               radius = 2,
+              popup = ~paste("<strong> ID_punto: </strong>", id_punto),
               group = "Puntos Aleatorios SP")
 
 mapa
@@ -701,6 +799,7 @@ https://es.wikipedia.org/wiki/Metrob%C3%BAs_(Buenos_Aires))
 Como OSMR(usado para calcular las isocronas) utiliza una medición de 83.33m/minuto, en vez de hacer nuevamente las isocronas a 13 minutos (proceso más costoso), las reduzco con un buffer a -166.66m.
 
 <details><summary> Código </summary>
+##Paradas Colectivos
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 
 #REDUZCO LAS ISOCRONAS EN 2 MINUTOS:
@@ -852,310 +951,6 @@ mapa
 transformar_todo_a_crs(22185)
 ```
 
-<details><summary> Código </summary>
-```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
-
-#MODIFICO LAS BD DE LOS PUNTOS DE ORIGEN Y LAS PARADAS PARA PODER TRABAJAR CON ELLAS EN CONJUNTO
-puntos_aleatorios_tot = bind_rows(puntos_aleatorios_bm, puntos_aleatorios_sp) %>% 
-  rename(geometry_puntos = geometry) %>% 
-  st_transform(22185)
-
-# UNO AMBAS POR ID_ORIGEN Y CONVIERTO A SF CON 2 GEOMETRIAS
-paradas_tot = paradas_tot %>%
-  left_join(puntos_aleatorios_tot %>% st_drop_geometry(), by = "id_punto") %>%
-  mutate(geometry_puntos = puntos_aleatorios_tot$geometry_puntos[match(id_punto, puntos_aleatorios_tot$id_punto)]) %>% 
-  select(-c(sector.x)) %>% 
-  rename(sector=sector.y)
-
-
-paradas_tot = st_sf(paradas_tot, sf_column_name = "geometry_parada") %>% 
-  st_transform(22185)  
-  
-
-#CALCULO LAS DISTANCIAS ENTRE ORIGEN (geometry_puntos QUE ES EL PUNTO ALEATORIO) Y EL DESTINO (GEOMETRY QUE ES EL PUNTO DE LA PARADA). DESPUES MIDO ESO EN TIEMPO Y CALCULO EL TIEMPO QUE QUEDA PARA QUE EL VIAJE SEA DE 15M
-paradas_tot_dist = paradas_tot %>% 
-  mutate(hasta_distancia = st_distance(geometry_parada, geometry_puntos, by_element = TRUE),
-         hasta_tiempo = as.numeric(hasta_distancia) / 83.33,
-         desde_tiempo = 15-hasta_tiempo)
-
-
-#INCORPORO LAS RUTAS DE LOS COLECTIVOS - ESTA PARTE TAMBIEN LA HAGO UNA SOLA VEZ
-#recorridos_colectivos = st_read("https://cdn.buenosaires.gob.ar/datosabiertos/datasets/transporte-y-obras-publicas/colectivos-recorridos/recorrido-colectivos.geojson") %>% 
-#  st_transform(22185) %>% 
-#  mutate(linea_sentido = paste0(linea,if_else(sentido == "IDA","I","V")))
-
-#HAGO LISTAS DE TODOS LOS COLECTIVOS QUE PASAN POR CADA PARADA Y LOS DEFINO CON EL MISMO FORMATO QUE LOS DEFINI EN LA BASE DE RECORRIDOS
-paradas_tot_dist = paradas_tot_dist %>%
-  mutate(across(c(l1, l2, l3, l4), ~ sprintf("%03d", as.numeric(.))),
-         linea_sentido = pmap(
-    list(l1, l1_sen, l2, l2_sen, l3, l3_sen, l4, l4_sen),
-    ~ compact(c(paste0(..1, ..2), paste0(..3, ..4), paste0(..5, ..6), paste0(..7, ..8)))
-  ))
-
-# ARMO UNA LISTA UNICA CON TODAS LAS LINEAS_SENTIDO QUE PASAN POR LAS PARADAS SELECCIONADAS Y FILTRO LOS RECORRIDOS SEGUN SI PERTENECEN A ESA LISTA
-#lineas_tot <- unique(unlist(paradas_tot_dist$linea_sentido))
-
-#recorridos_tot = recorridos_colectivos %>%
-#  filter(linea_sentido %in% lineas_tot)
-
-#st_write(recorridos_tot, "data/recorridos_tot.geojson")
-
-recorridos_tot = st_read("data/recorridos_tot.geojson")
-```
-</details>
-
-Imagen 7. Recorridos enteros de los colectivos que pasan por las paradas seleccionadas. 
-Cada recorrido tiene una etiqueta que expresa la línea, recorrido y sentido del mismo.
-
-```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
-
-transformar_todo_a_crs(4326)
-
-mapa =
-leaflet(st_zm(sectores_prox)) %>%
-  addTiles() %>%
-  addProviderTiles(providers$CartoDB.Positron, group = "OSM",
-                   options = providerTileOptions(minzoom = 1, maxzoom = 15)) %>%
-  addProviderTiles(providers$Esri.WorldImagery, group = "Satelite") %>%
-  addLayersControl(
-    baseGroups = c("OSM","Satelite"), 
-    overlayGroups = c("Isocronas Barrio Mugica","Barrio Mugica", "Puntos Aleatorios BM", "Isocronas Sector 1", "Isocronas Sector 2", "Isocronas Sector 3", "Isocronas Sector 4", "Isocronas Sector 5", "Isocronas Sector 6", "Sectores Proximos", "Puntos Aleatorios SP", "Recorridos colectivos", "Paradas SP", "Paradas BM"))%>% 
-  
-  addPolygons(data= isocronas15_bm,
-              color = "#a64d79",
-              weight = 1,
-              opacity = 0.7,
-              fillColor = "#a64d79",
-              fillOpacity = 0.4,
-              group = "Isocronas Barrio Mugica") %>%
-  
-
-  addPolygons(data= b_mugica,
-              color = "black",
-              weight = 1,
-              opacity = 0.7,
-              fillColor = "white",
-              fillOpacity = 0,
-              group = "Barrio Mugica") %>%
-
-  addPolygons(data= isocronas15_sp %>% filter(sector=="1"),
-              color = ~pal(sector),
-              weight = 0.6,
-              opacity = 0.7,
-              fillColor = ~pal(sector),
-              fillOpacity = 0.4,
-              group = "Isocronas Sector 1") %>% 
-  
-    addPolygons(data= isocronas15_sp%>% filter(sector=="2"),
-              color = ~pal(sector),
-              weight = 0.6,
-              opacity = 0.7,
-              fillColor = ~pal(sector),
-              fillOpacity = 0.4,
-              group = "Isocronas Sector 2") %>% 
-  
-    addPolygons(data= isocronas15_sp%>% filter(sector=="3"),
-              color = ~pal(sector),
-              weight = 0.6,
-              opacity = 0.7,
-              fillColor = ~pal(sector),
-              fillOpacity = 0.4,
-              group = "Isocronas Sector 3") %>% 
-  
-    addPolygons(data= isocronas15_sp %>% filter(sector=="4"),
-              color = ~pal(sector),
-              weight = 0.6,
-              opacity = 0.7,
-              fillColor = ~pal(sector),
-              fillOpacity = 0.4,
-              group = "Isocronas Sector 4") %>% 
-  
-    addPolygons(data= isocronas15_sp %>% filter(sector=="5"),
-              color = ~pal(sector),
-              weight = 0.6,
-              opacity = 0.7,
-              fillColor = ~pal(sector),
-              fillOpacity = 0.4,
-              group = "Isocronas Sector 5") %>% 
-  
-    addPolygons(data= isocronas15_sp %>% filter(sector=="6"),
-              color = ~pal(sector),
-              weight = 0.6,
-              opacity = 0.7,
-              fillColor = ~pal(sector),
-              fillOpacity = 0.4,
-              group = "Isocronas Sector 6") %>% 
-
-  addPolygons(data= sectores_contorno,
-              color = "black",
-              weight = 0.6,
-              opacity = 0.7,
-              fillColor = "white",
-              fillOpacity = 0,
-              group = "Sectores Proximos") %>% 
-  
-    addCircleMarkers(data=puntos_aleatorios_bm,
-              fillColor = "black",
-              weight = 0.5,
-              color = "black",
-              fillOpacity = 0.5,
-              radius = 2,
-              group = "Puntos Aleatorios BM") %>%
-
-  addCircleMarkers(data=puntos_aleatorios_sp,
-              fillColor = "black",
-              weight = 0.5,
-              color = "black",
-              fillOpacity = 0.5,
-              radius = 2,
-              group = "Puntos Aleatorios SP") %>% 
-  
-  addCircleMarkers(data=paradas_tot %>% filter(sector!=0),
-              fillColor = "white",
-              weight = 0.5,
-              color = "white",
-              fillOpacity = 0.5,
-              radius = 2,
-              group = "Paradas SP") %>%
-  
-    addCircleMarkers(data=paradas_tot %>% filter(sector==0),
-              fillColor = "white",
-              weight = 0.5,
-              color = "white",
-              fillOpacity = 0.5,
-              radius = 2,
-              group = "Paradas BM") %>%
-  
-  
-    addPolylines(data = recorridos_tot,
-             color = "navy",
-             weight = 1,
-             opacity = 0.5,
-             popup = ~paste("<strong> LINEA: </strong>", linea,"<br><strong>RECORRIDO:</strong>", recorrido,"<br><strong>SENTIDO:</strong>", sentido),
-             group = "Recorridos colectivos")
-
-mapa
-
-transformar_todo_a_crs(22185)
-```
-
-
-<details><summary> Código inútil-arreglar </summary>
----------------------------------------------------------------------------------------------------------------
-
-# Rename geometry column and keep it
-recorridos_bm <- recorridos_bm %>%
-  rename(geometry_recorrido = geometry)
-
-recorridos_bm_df <- st_drop_geometry(recorridos_bm)
-
-# Set geometry column name in paradas_bm
-names(paradas_bm)[names(paradas_bm) == "geometry"] <- "geometry_parada"
-st_geometry(paradas_bm) <- "geometry_parada"
-
-# Clean and prepare paradas
-paradas_desde_bm <- paradas_bm %>%
-  unnest(linea_sentido) %>%
-  filter(linea_sentido != " NANA") %>%
-  select(fid, id_origen, geometry_parada, geometry_puntos, hasta_distancia, hasta_tiempo, desde_tiempo, linea_sentido)
-
-# Ensure geometry_parada is a column (not active geometry)
-paradas_desde_bm <- paradas_desde_bm %>%
-  mutate(geometry_parada = st_geometry(.))
-
-# Join safely
-recorridos_desde_bm <- paradas_desde_bm %>%
-  left_join(
-    recorridos_bm_df %>% select(linea_sentido, geometry_recorrido),
-    by = "linea_sentido"
-  )
-
-# Rebuild sf with geometry_parada as active geometry
-recorridos_desde_bm <- st_as_sf(recorridos_desde_bm, sf_column_name = "geometry_parada")
-
-
-
-#Calculo en m la distancia que se puede recorrer con el tiempo disponible que queda del viaje de 15m desde la parada a la que se llega en adelante:
-##recorridos_desde_bm = recorridos_desde_bm %>% 
-##  mutate(desde_distancia = desde_tiempo*250) #Teniendo en cuenta que la velocidad efectiva promedio del servicio contando paradas son 15km/m
-
-
-
-# Función para proyectar el punto sobre la línea
-proyectar_punto_en_linea <- function(geom_linea, geom_punto) {
-  nearest_line <- st_nearest_points(geom_punto, geom_linea)
-  points <- st_cast(nearest_line, "POINT")
-  
-  if (length(points) != 2) {
-    warning("Projection failed.")
-    return(NA)
-  }
-
-  projected_point <- points[2]
-
-  # Set CRS explicitly
-  projected_point <- st_set_crs(projected_point, st_crs(geom_linea))
-
-  
-  return(projected_point)
-}
-
-cortar_linea_desde_punto <- function(geom_linea, geom_punto, dist_max_m) {
-  if (st_crs(geom_linea) != st_crs(geom_punto)) {
-    print(st_crs(geom_linea))
-    print(st_crs(geom_punto))
-    stop("CRS mismatch between line and point")
-  }
-
-  # Project the point onto the line
-  punto_proyectado <- proyectar_punto_en_linea(geom_linea, geom_punto)
-
-  # Cut the line at the projected point
-  cortar_linea_raw <- tryCatch(
-    lwgeom::st_split(geom_linea, punto_proyectado),
-    error = function(e) return(NA)
-  )
-
-  if (is.na(cortar_linea_raw)) return(NA)
-
-  cortar_linea <- st_collection_extract(cortar_linea_raw, "LINESTRING")
-
-  if (length(cortar_linea) < 2) return(NA)
-
-  dists <- st_distance(st_startpoint(cortar_linea), punto_proyectado)
-  segmento_proximo <- cortar_linea[[which.min(as.numeric(dists))]]
-
-  largo_total <- as.numeric(st_length(segmento_proximo))
-
-  if (dist_max_m >= largo_total) {
-    return(segmento_proximo)
-  }
-
-  corte_punto <- st_line_sample(segmento_proximo, sample = dist_max_m / largo_total)
-
-  corte_final_raw <- tryCatch(
-    lwgeom::st_split(segmento_proximo, corte_punto),
-    error = function(e) return(NA)
-  )
-
-  if (is.na(corte_final_raw)) return(NA)
-
-  corte_final <- st_collection_extract(corte_final_raw, "LINESTRING")
-
-  return(corte_final[[1]])
-}
-
-
-# Ahora proyectar y cortar
-recorridos_desde_bm <- recorridos_desde_bm %>%
-  rowwise() %>%
-  mutate(
-    geometry_parada_proyectada = list(proyectar_punto_en_linea(geometry_recorrido, geometry_parada)),
-    recorrido_desde_parada = list(cortar_linea_desde_punto(geometry_recorrido, geometry_parada_proyectada, desde_distancia))
-  ) %>%
-  ungroup()
-
--------------------------------------------------------------------------------------------------------
 
 </details>
 
@@ -1167,129 +962,104 @@ recorridos_desde_bm <- recorridos_desde_bm %>%
 Comercios dentro del Barrio Mugica
 
 <details><summary> Código </summary>
+## Comercios BM
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
+
 #VEO QUE CAPAS TENGO EN INFORMACION TERRITORIAL, NO LLAMAR TODO.
 #print(st_layers("data/informacion_territorial.gpkg"))
 
 #ME TRAIGO LA CAPA DE COMERCIOS Y LA FILTRO SEGÚN LOS QUE CORRESPONDEN A LA INVESTIGACIÓN.
 comercios1_bm = st_read("data/informacion_territorial.gpkg", layer = "comercios") %>% 
   filter(Tipo == "Comercio",
-         grepl("ALMACÉN|Kiosko|Carnicer|Fiambrería|Verdulería", Rubro)) %>% 
+         grepl("ALMACÉN|Kiosko|Carnicer|Fiambrería|Verdulería", Rubro),
+         !st_is_empty(geom)) %>% 
   st_transform(22185) %>% 
   mutate(Altura = as.numeric(Altura)) %>% 
+  rename(geometry = geom) %>% 
   arrange(Calle, Altura) %>% 
-  clean_names()
+  clean_names() %>% 
+  select(direccion)
+
 
 #GUARDO LAS OBSERVACIONES PARA IR A RELEVAR AL TERRITORIO INCORPORANDO LA INFORMACIÓN Y ACTUALIZANDO LOS DATOS YA QUE SON DEL 2022
 #st_write(comercios1_bm,"data/comercios1_bm.xlsx")
-
-comercios_bm_territorio = read_excel(
-  "data/comercios_bm_territorio.xlsx",
-  col_names = TRUE,
-  col_types = NULL,
-  na = "",
-  trim_ws = TRUE,
-  skip = 0) %>% 
+comercios_sin_geom = read_excel("data/comercios_bm_sin_geom.xlsx") %>%
   clean_names()
 
-#FILTRO SOLO LAS DIRECCIONES Y LA GEOMETRIA DE LOS COMERCIOS1_bm:
-comercios1_bm = comercios1_bm %>% 
-  select(direccion)
-
-comercios_bm = left_join(comercios_bm_territorio, comercios1_bm, by = "direccion") %>% 
-  filter(!is.na(altura)) %>% 
-  mutate(relevado = if_else(is.na(leche), 0, 1),
-         cadena = as.factor("no"))
-
-
-#IMPORTO LOS COMERCIOS MAPEADOS DE CABA
-comercios_caba = st_read("data/meu_tesis_supermercados_caba.kml") %>% 
-  st_make_valid() %>% 
-  st_zm() %>% 
+comercios_sin_geom$geometry <- st_as_sfc(comercios_sin_geom$geometry)
+ 
+comercios_sin_geom = comercios_sin_geom %>% 
+  st_as_sf(crs = 4326) %>% 
   st_transform(22185)
 
-#FILTRO LOS COMERCIOS DE CABA PARA QUEDARME CON LOS QUE CAEN EN LAS ISOCRONAS DEL BM
-comercios2_bm = st_filter(comercios_caba, isocronas15_bm) %>% 
-  rename(geom = geometry,
-         Observaciones = Name) %>% 
-  mutate(rubro = "Supermercado",
-         cadena= as.factor("si"),
-         relevado = 0) %>% 
-  select(-Description)
+comercios2_bm = rbind(comercios1_bm, comercios_sin_geom)
 
-comercios_bm = bind_rows(comercios_bm, comercios2_bm) %>% 
-  mutate(relevado = as.factor(relevado)) %>% 
-  filter(!st_is_empty(geom)) %>% 
-  st_as_sf()
+comercios_bm_territorio = read_excel("data/comercios_bm_territorio.xlsx") %>%
+  clean_names()
 
-rm(comercios1_bm, comercios2_bm, comercios_bm_territorio)
+comercios_bm_cadena = comercios_bm_territorio %>% 
+  filter(cadena == "si") 
+
+comercios_bm_cadena$geometry <- st_as_sfc(comercios_bm_cadena$geometry)
+
+comercios_bm_cadena = comercios_bm_cadena %>% 
+                      st_as_sf(crs = 4326) %>% 
+                      st_transform(22185)
+
+
+comercios_bm_local = comercios_bm_territorio %>% 
+  filter(cadena == "no") %>% 
+  select(-geometry)
+  
+
+comercios_bm_local_geom = left_join(comercios_bm_local, comercios2_bm, by = "direccion") %>% 
+  mutate(relevado = as.factor(if_else(is.na(leche), 0, 1))) %>% 
+  st_as_sf() %>% 
+  st_transform(22185)
+
+
+comercios_bm_territorio = rbind(comercios_bm_local_geom, comercios_bm_cadena) %>% 
+  filter(!st_is_empty(geometry)) %>% 
+  mutate(id_comercio = paste0("cbm_", str_pad(01:(00 + n()), width = 4, pad = "0")))
+
+
+rm(comercios1_bm, comercios_sin_geom, comercios2_bm, comercios_bm_cadena, comercios_bm_local, comercios_bm_local_geom )
 ```
 </details>
-
-```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
-
-semaforo <- colorFactor(c("#f6b26b","#6aa84f"), domain = comercios_bm$relevado)
-
-transformar_todo_a_crs(4326)
-
-mapa =
-leaflet(st_zm(sectores_prox)) %>%
-  addTiles() %>%
-  addProviderTiles(providers$CartoDB.Positron, group = "OSM",
-                   options = providerTileOptions(minzoom = 1, maxzoom = 15)) %>%
-  addProviderTiles(providers$Esri.WorldImagery, group = "Satelite") %>%
-  addLayersControl(
-    baseGroups = c("OSM","Satelite"), 
-    overlayGroups = c("Isocronas Barrio Mugica","Barrio Mugica", "Puntos Aleatorios BM", "Comercios BM"))%>% 
-  
-  addPolygons(data= isocronas15_bm,
-              color = "#a64d79",
-              weight = 1,
-              opacity = 0.7,
-              fillColor = "#a64d79",
-              fillOpacity = 0.4,
-              group = "Isocronas Barrio Mugica") %>%
-  
-
-  addPolygons(data= b_mugica,
-              color = "black",
-              weight = 1,
-              opacity = 0.7,
-              fillColor = "white",
-              fillOpacity = 0,
-              group = "Barrio Mugica") %>%
-  
-      addCircleMarkers(data=puntos_aleatorios_bm,
-              fillColor = "black",
-              weight = 0.5,
-              color = "black",
-              fillOpacity = 0.5,
-              radius = 2,
-              group = "Puntos Aleatorios BM") %>%
-
-  
-  addCircleMarkers(data=comercios_bm,
-              fillColor = ~semaforo(relevado),
-              weight = 0.5,
-              color = ~semaforo(relevado),
-              fillOpacity = 0.9,
-              radius = 2,
-              popup = ~paste("<strong> RUBRO: </strong>", rubro,"<br><strong>SECTOR:</strong>", sector,"<br><strong>DIRECCIÓN:</strong>", direccion, "<br><strong>RELEVADO:</strong>",relevado,"<br><strong>CADENA:</strong>", cadena ),
-              group = "Comercios BM") 
-  
-
-mapa
-
-transformar_todo_a_crs(22185)
-```
 
 
 Comercios en los sectores formales próximos
 
 <details><summary> Código inútil-arreglar </summary>
+## Comercios SP
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
-#FILTRO LOS COMERCIOS DE CABA PARA QUEDARME CON LOS QUE CAEN EN LAS ISOCRONAS DE LOS SP
-comercios_sp = st_filter(comercios_caba, isocronas15_sp)
+#IMPORTO LOS COMERCIOS MAPEADOS DE CABA Y LOS FILTRO PARA QUEDARME CON LOS QUE CAEN EN LAS ISOCRONAS DE LOS SP
+comercios_sp1 = st_read("data/meu_tesis_supermercados_caba.kml") %>% 
+  st_make_valid() %>% 
+  st_zm() %>% 
+  st_transform(22185) %>% 
+  st_filter(isocronas15_sp) %>% 
+  clean_names() %>% 
+  select(-description) %>% 
+  rename(rubro = name) %>% 
+  mutate(cadena = "si",
+         id_comercio = paste0("csp_", str_pad(76:(75 + n()), width = 4, pad = "0")))
+
+
+comercios_sp2 = read_excel("data/comercios_territorio_sp.xlsx") %>%
+  clean_names()
+
+comercios_sp2$geometry <- st_as_sfc(comercios_sp2$geometry)
+
+comercios_sp2 = comercios_sp2 %>% 
+                st_as_sf(crs = 4326) %>% 
+                st_transform(22185)
+
+comercios_sp = bind_rows(comercios_sp2,comercios_sp1)
+
+comercios_tot = bind_rows(comercios_sp, comercios_bm_territorio)
+
+rm(comercios_sp1,comercios_sp2)
 ```
 </details>
 
@@ -1383,7 +1153,7 @@ leaflet(st_zm(sectores_prox)) %>%
               group = "Puntos Aleatorios SP") %>% 
   
 
-  addCircleMarkers(data = comercios_sp,
+  addCircleMarkers(data = comercios_tot,
               fillColor = "#f6b26b",
               weight = 0.5,
               color = "#f6b26b",
@@ -1395,6 +1165,310 @@ mapa
 
 transformar_todo_a_crs(22185)
 ```
+
+
+Comercios por isocrona
+
+<details><summary> Código </summary>
+## Comercios por isocrona
+```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
+#CRUZO LOS COMERCIOS CON LAS ISOCRONAS
+
+# Point–polygon join: repeat points once per intersecting isochrone
+comercios_por_isocrona = st_join(comercios_tot, isocronas15_tot, join = st_intersects, left = TRUE)
+
+n_comercios_x_iso = comercios_por_isocrona %>% 
+  group_by(id_isocrona) %>% 
+  summarise(n_comercios = n())
+
+vars = c("leche","harina","azucar","arroz","papa","fiambre_jc", "carne_pic")
+
+# 2) Long format: one row per (isochrone, store, product)
+df_long <- comercios_por_isocrona %>%
+  select(id_isocrona, id_comercio, all_of(vars)) %>%
+  pivot_longer(cols = all_of(vars), names_to = "product", values_to = "price") %>%
+  filter(!is.na(price) & price > 0)
+
+# 3) (A) Least-Cost Basket per isochrone
+# Use a robust floor (p10) instead of raw min to avoid outliers/mistakes
+iso_prod_floor <- df_long %>%
+  group_by(id_isocrona, product) %>%
+  summarise(price_floor = quantile(price, 0.10, na.rm = TRUE), .groups = "drop")
+
+# Sum basket (unweighted). For a multiplicative index, use geometric mean of price relatives.
+lcbi <- iso_prod_floor %>%
+  group_by(id_isocrona) %>%
+  summarise(
+    basket_sum_min = sum(price_floor, na.rm = TRUE),
+    basket_gm_min  = exp(mean(log(price_floor), na.rm = TRUE)),  # geometric mean
+    n_products     = sum(is.finite(price_floor)),
+    .groups = "drop"
+  )
+
+# 4) (B) Headroom / dispersion per isochrone
+# Compute p90 and p10 of log prices (more stable), then average spread across products
+iso_prod_spread <- df_long %>%
+  mutate(logp = log(price)) %>%
+  group_by(id_isocrona, product) %>%
+  filter(n() >= 3) %>%  # ensure enough stores for that product in the isochrone
+  summarise(
+    p10 = quantile(logp, 0.10, na.rm = TRUE),
+    p90 = quantile(logp, 0.90, na.rm = TRUE),
+    spread_log = p90 - p10,
+    .groups = "drop"
+  )
+
+headroom <- iso_prod_spread %>%
+  group_by(id_isocrona) %>%
+  summarise(
+    headroom_log = mean(spread_log, na.rm = TRUE),
+    n_prod_spread = n(),
+    .groups = "drop"
+  )
+
+# 5) Combine metrics per isochrone
+#iso_metrics <- lcbi %>%
+#  left_join(headroom, by = "id_isocrona")
+```
+```{r}
+# 1) Filter and flag groups
+lcbi2 <- lcbi %>%                                # <- your table with id_isocrona, basket_* and n_products
+  filter(!str_detect(id_isocrona, "^(3|6)_")) %>%
+  mutate(group = if_else(str_starts(id_isocrona, "0"), "slum", "formal"))
+
+# 2) Summary table (unweighted + weighted by product coverage)
+sumtab <- lcbi2 %>%
+  group_by(group) %>%
+  summarise(
+    n_iso        = n(),
+    # basket_sum_min
+    mean_sum     = mean(basket_sum_min, na.rm = TRUE),
+    median_sum   = median(basket_sum_min, na.rm = TRUE),
+    wmean_sum    = weighted.mean(basket_sum_min, w = n_products, na.rm = TRUE),
+    # basket_gm_min
+    mean_gm      = mean(basket_gm_min, na.rm = TRUE),
+    median_gm    = median(basket_gm_min, na.rm = TRUE),
+    wmean_gm     = weighted.mean(basket_gm_min, w = n_products, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+print(sumtab)
+
+# 3) Robust group tests (Mann–Whitney/Wilcoxon rank-sum)
+wilcox_sum <- wilcox.test(basket_sum_min ~ group, data = lcbi2, exact = FALSE)
+wilcox_gm  <- wilcox.test(basket_gm_min  ~ group, data = lcbi2, exact = FALSE)
+
+wilcox_sum$p.value; wilcox_gm$p.value
+```
+```{r}
+library(effsize)
+
+# Wilcoxon rank-sum (robust to non-normality)
+wilcox.test(basket_sum_min ~ group, data = lcbi2, exact = FALSE)
+wilcox.test(basket_gm_min  ~ group, data = lcbi2, exact = FALSE)
+
+# t-test on logs → interpretable as % differences
+t.test(log(basket_sum_min) ~ group, data = lcbi2)
+t.test(log(basket_gm_min)  ~ group, data = lcbi2)
+
+# Effect size: Cliff's delta (nonparametric)
+cliff.delta(basket_sum_min ~ group, data = lcbi2)
+cliff.delta(basket_gm_min  ~ group, data = lcbi2)
+```
+Main finding (poverty penalty on the least-cost basket)
+
+Sum of cheapest items: the slum’s basket is ~53.6% higher than the formal areas
+(log mean diff = 0.429; ratio = exp(0.429)=1.536; 95% CI [40.1%, 68.5%]; t-test p < 3e-11; Wilcoxon p ≈ 4.6e-6; Cliff’s δ = −1, large).
+
+Geometric-mean basket: the slum’s basket is ~9.73% higher
+(log mean diff = 0.0928; ratio = exp(0.0928)=1.097; 95% CI [5.0%, 14.7%]; t-test p ≈ 1.17e-4; Wilcoxon p ≈ 0.109; Cliff’s δ ≈ −0.35, medium).
+
+Why Wilcoxon differs for the geometric mean: Wilcoxon tests median differences on the raw scale and, with small n and overlapping distributions, it has less power. The t-test on logs is the most aligned with the geometric-mean construct (and is what you should report as the primary test for basket_gm_min).
+
+After excluding isochrones starting with 3_ and 6_, the least-cost basket for staples is ~54% higher in slum isochrones than in adjacent formal areas (95% CI: +40% to +68%). Using a geometric-mean basket (robust central tendency), the slum penalty is ~9.7% (95% CI: +5.0% to +14.7%).
+```{r}
+# convert a log-difference CI into a % ratio CI
+to_pct <- function(x) 100*(exp(x) - 1)
+
+ci_gm_sorted  <- sort(ci_gm)   # was c(upper, lower)
+ci_sum_sorted <- sort(ci_sum)
+
+pct_gm   <- to_pct(diff_gm)
+pct_gmCI <- to_pct(ci_gm_sorted)
+
+pct_sum   <- to_pct(diff_sum)
+pct_sumCI <- to_pct(ci_sum_sorted)
+
+tibble::tibble(
+  metric   = c("basket_gm_min", "basket_sum_min"),
+  pct_diff = c(pct_gm, pct_sum),
+  ci_low   = c(pct_gmCI[1], pct_sumCI[1]),
+  ci_high  = c(pct_gmCI[2], pct_sumCI[2])
+)
+
+```
+Interpretable results (slum vs. formal)
+
+Geometric-mean basket: +9.73% (95% CI +5.0% to +14.7%).
+
+Sum of cheapest items: +53.62% (95% CI +40.1% to +68.5%).
+
+Excluding 3_/6_ isochrones, the least-cost basket is ~54% higher in slum isochrones (95% CI: +40% to +68%). Using a geometric-mean basket, the slum premium is ~9.7% (95% CI: +5.0% to +14.7%).
+
+```{r}
+res <- tibble::tribble(
+  ~metric,           ~pct_diff, ~ci_low, ~ci_high,
+  "basket_gm_min",    9.728559,  5.003404, 14.66635,
+  "basket_sum_min",  53.618874, 40.073234, 68.47443
+)
+
+ggplot(res, aes(x = reorder(metric, pct_diff), y = pct_diff)) +
+  geom_pointrange(aes(ymin = ci_low, ymax = ci_high)) +
+  geom_hline(yintercept = 0, linetype = 2) +
+  coord_flip() +
+  labs(x = NULL, y = "Slum premium (%)",
+       title = "Least-cost basket premium (slum vs. formal)",
+       subtitle = "Point estimates with 95% CIs")
+
+```
+
+```{r}
+min_obs_per_iso_prod <- 3    # require ≥3 price points per (isochrone, product) to compute p10
+
+# Long data of cheapest-available prices per store/product
+df_long <- comercios_por_isocrona %>%
+  select(id_isocrona, id_comercio, all_of(vars)) %>%
+  pivot_longer(cols = all_of(vars), names_to = "product", values_to = "price") %>%
+  filter(is.finite(price) & price > 0)
+
+# Floor price (robust min via p10) per isochrone × product
+iso_prod <- df_long %>%
+  group_by(id_isocrona, product) %>%
+  filter(n() >= min_obs_per_iso_prod) %>%
+  summarise(price_floor = quantile(price, 0.10, na.rm = TRUE), .groups = "drop")
+
+# Flag groups; drop 3_* and 6_*
+iso_prod2 <- iso_prod %>%
+  filter(!str_detect(id_isocrona, "^(3|6)_")) %>%
+  mutate(group = if_else(str_starts(id_isocrona, "0"), "slum", "formal"),
+         group = factor(group, levels = c("formal","slum")))  # ensure order for tests
+
+# Per-product Welch t-tests on log floor price
+per_product <- iso_prod2 %>%
+  mutate(log_floor = log(price_floor)) %>%
+  group_by(product) %>%
+  group_modify(~{
+    tt <- t.test(log_floor ~ group, data = .x)  # difference = mean(formal) - mean(slum)
+    m_formal <- unname(tt$estimate[1]); m_slum <- unname(tt$estimate[2])
+    diff_log <- m_slum - m_formal
+    ci_s_f   <- -rev(tt$conf.int)              # convert CI to (slum - formal)
+    tibble(
+      n_formal = sum(.x$group=="formal"),
+      n_slum   = sum(.x$group=="slum"),
+      diff_log = diff_log,
+      pct_diff = 100*(exp(diff_log) - 1),
+      ci_low   = 100*(exp(sort(ci_s_f)[1]) - 1),
+      ci_high  = 100*(exp(sort(ci_s_f)[2]) - 1),
+      p_value  = tt$p.value
+    )
+  }) %>%
+  ungroup() %>%
+  arrange(desc(pct_diff))
+
+# Contributions to overall GM gap (coverage-weighted)
+per_product <- per_product %>%
+  mutate(w = pmin(n_formal, n_slum),
+         contrib = w*diff_log) %>%
+  mutate(contrib_share = contrib / sum(contrib, na.rm = TRUE))
+
+per_product
+```
+```{r}
+ggplot(per_product, aes(x = reorder(product, pct_diff), y = pct_diff)) +
+  geom_pointrange(aes(ymin = ci_low, ymax = ci_high)) +
+  geom_hline(yintercept = 0, linetype = 2) +
+  coord_flip() +
+  labs(x = NULL, y = "Slum premium (%)",
+       title = "Per-product least-cost floor price (p10) — slum vs formal",
+       subtitle = "Point estimates with 95% CIs (Welch t-tests on log prices)")
+
+```
+
+```{r}
+ggplot(per_product, aes(x = reorder(product, contrib_share), y = 100*contrib_share)) +
+  geom_col() +
+  coord_flip() +
+  labs(x = NULL, y = "Share of GM gap (%)",
+       title = "Product contributions to the geometric-mean basket gap",
+       subtitle = "Coverage-weighted (by matched isochrone counts)")
+
+```
+```{r}
+# --- helper: build LCBI from a product set ---
+compute_lcbi <- function(data, vars, min_obs_per_iso_prod = 3){
+  df_long <- data %>%
+    select(id_isocrona, id_comercio, all_of(vars)) %>%
+    pivot_longer(all_of(vars), names_to = "product", values_to = "price") %>%
+    filter(is.finite(price), price > 0)
+
+  iso_prod_floor <- df_long %>%
+    group_by(id_isocrona, product) %>%
+    filter(n() >= min_obs_per_iso_prod) %>%
+    summarise(price_floor = quantile(price, 0.10, na.rm = TRUE), .groups = "drop")
+
+  iso_prod_floor %>%
+    filter(!str_detect(id_isocrona, "^(3|6)_")) %>%
+    group_by(id_isocrona) %>%
+    summarise(
+      basket_sum_min = sum(price_floor, na.rm = TRUE),
+      basket_gm_min  = exp(mean(log(price_floor), na.rm = TRUE)),
+      n_products     = n(),
+      .groups = "drop"
+    ) %>%
+    mutate(group = if_else(str_starts(id_isocrona, "0"), "slum", "formal"))
+}
+
+# --- helper: report % diff (slum − formal) with CIs from t-tests on logs ---
+report_gap <- function(lcbi_tbl){
+  conv <- function(tt){
+    diff_log <- -diff(tt$estimate)                 # slum − formal
+    ci_log   <- sort(-tt$conf.int)
+    c(pct = 100*(exp(diff_log)-1),
+      lo  = 100*(exp(ci_log[1])-1),
+      hi  = 100*(exp(ci_log[2])-1),
+      p   = unname(tt$p.value))
+  }
+  t_sum <- t.test(log(basket_sum_min) ~ group, data = lcbi_tbl)
+  t_gm  <- t.test(log(basket_gm_min)  ~ group, data = lcbi_tbl)
+
+  tibble::tibble(
+    metric   = c("basket_sum_min","basket_gm_min"),
+    pct_diff = c(conv(t_sum)["pct"], conv(t_gm)["pct"]),
+    ci_low   = c(conv(t_sum)["lo"],  conv(t_gm)["lo"]),
+    ci_high  = c(conv(t_sum)["hi"],  conv(t_gm)["hi"]),
+    p_value  = c(conv(t_sum)["p"],   conv(t_gm)["p"])
+  )
+}
+
+# --- run with and without meat ---
+vars_all     <- c("leche","harina","azucar","arroz","papa","fiambre_jc","carne_pic")
+vars_no_meat <- setdiff(vars_all, "carne_pic")
+
+lcbi_all     <- compute_lcbi(comercios_por_isocrona, vars_all)
+lcbi_nomeat  <- compute_lcbi(comercios_por_isocrona, vars_no_meat)
+
+res_all    <- report_gap(lcbi_all)
+res_nomeat <- report_gap(lcbi_nomeat)
+
+res_all
+res_nomeat
+```
+
+
+
+
+
+</details>
 
 <h2>
   IRRIGACIÓN </br>
