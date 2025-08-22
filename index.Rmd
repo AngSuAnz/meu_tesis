@@ -12,6 +12,7 @@ options(scipen = 999)
 library(distill)
 library(dplyr)
 library(DT)
+library(effsize)
 library(ggmap)
 library(ggplot2)
 library(gotop)
@@ -520,23 +521,23 @@ puntos_aleatorios_bm = st_read("data/puntos_aleatorios_bm.geojson") %>%
 isocronas15_bm = st_read("data/isocronas15_bm.geojson")%>% 
                     st_transform(22185) %>% 
                     st_make_valid()%>% 
-                    mutate(id_isocrona = paste0("0_",as.character(row_number())),
-                           sector = 0) %>%
-                    select(sector,id_isocrona) 
+                    mutate(id_punto = paste0("0_",as.character(row_number())),
+                           sector = 0) %>% 
+                    select(sector,id_punto) 
 
 isocronas10_bm = st_read("data/isocronas10_bm.geojson")%>% 
                     st_transform(22185) %>% 
                     st_make_valid()%>% 
-                    mutate(id_isocrona = paste0("0_",as.character(row_number())),
+                    mutate(id_punto = paste0("0_",as.character(row_number())),
                            sector = 0) %>%
-                    select(sector,id_isocrona) 
+                    select(sector,id_punto) 
 
 isocronas05_bm = st_read("data/isocronas05_bm.geojson")%>% 
                     st_transform(22185) %>% 
                     st_make_valid()%>% 
-                    mutate(id_isocrona = paste0("0_",as.character(row_number())),
+                    mutate(id_punto = paste0("0_",as.character(row_number())),
                            sector = 0) %>%
-                    select(sector,id_isocrona)
+                    select(sector,id_punto)
                     
 ```
 ## Puntos Aleatorios e isocronas sp
@@ -814,7 +815,7 @@ isocronas13_tot <- st_buffer(isocronas15_tot, dist = -166.66)%>%
 #  select(where(~ !all(is.na(.)))) %>% 
 #  clean_names() %>% 
 #  select(-c(calle,alt_plano,coord_x,coord_y,comuna,barrio,fid)) %>% 
-#  mutate(id_punto=id_isocrona) %>% 
+#  mutate(id_punto=id_punto) %>% 
 #  rename(geometry_parada = geometry)
 
 #st_write(paradas_tot, "data/paradas_tot.geojson")
@@ -1018,12 +1019,12 @@ comercios_bm_local_geom = left_join(comercios_bm_local, comercios2_bm, by = "dir
   st_transform(22185)
 
 
-comercios_bm_territorio = rbind(comercios_bm_local_geom, comercios_bm_cadena) %>% 
+comercios_bm = rbind(comercios_bm_local_geom, comercios_bm_cadena) %>% 
   filter(!st_is_empty(geometry)) %>% 
   mutate(id_comercio = paste0("cbm_", str_pad(01:(00 + n()), width = 4, pad = "0")))
 
 
-rm(comercios1_bm, comercios_sin_geom, comercios2_bm, comercios_bm_cadena, comercios_bm_local, comercios_bm_local_geom )
+rm(comercios1_bm, comercios_sin_geom, comercios2_bm, comercios_bm_cadena, comercios_bm_local, comercios_bm_territorio, comercios_bm_local_geom )
 ```
 </details>
 
@@ -1057,7 +1058,7 @@ comercios_sp2 = comercios_sp2 %>%
 
 comercios_sp = bind_rows(comercios_sp2,comercios_sp1)
 
-comercios_tot = bind_rows(comercios_sp, comercios_bm_territorio)
+comercios_tot = bind_rows(comercios_sp, comercios_bm)
 
 rm(comercios_sp1,comercios_sp2)
 ```
@@ -1075,7 +1076,7 @@ leaflet(st_zm(sectores_prox)) %>%
   addProviderTiles(providers$Esri.WorldImagery, group = "Satelite") %>%
   addLayersControl(
     baseGroups = c("OSM","Satelite"), 
-    overlayGroups = c("Barrio Mugica", "Isocronas Sector 1", "Isocronas Sector 2", "Isocronas Sector 3", "Isocronas Sector 4", "Isocronas Sector 5", "Isocronas Sector 6", "Sectores Proximos", "Puntos Aleatorios SP", "Comercios SP"))%>% 
+    overlayGroups = c("Barrio Mugica", "Isocronas Sector 1", "Isocronas Sector 2", "Isocronas Sector 3", "Isocronas Sector 4", "Sectores Proximos", "Puntos Aleatorios SP", "Comercios Tot"))%>% 
   
 
 
@@ -1117,23 +1118,7 @@ leaflet(st_zm(sectores_prox)) %>%
               opacity = 0.7,
               fillColor = ~pal(sector),
               fillOpacity = 0.4,
-              group = "Isocronas Sector 4") %>% 
-  
-    addPolygons(data= isocronas15_sp %>% filter(sector=="5"),
-              color = ~pal(sector),
-              weight = 0.6,
-              opacity = 0.7,
-              fillColor = ~pal(sector),
-              fillOpacity = 0.4,
-              group = "Isocronas Sector 5") %>% 
-  
-    addPolygons(data= isocronas15_sp %>% filter(sector=="6"),
-              color = ~pal(sector),
-              weight = 0.6,
-              opacity = 0.7,
-              fillColor = ~pal(sector),
-              fillOpacity = 0.4,
-              group = "Isocronas Sector 6") %>% 
+              group = "Isocronas Sector 4") %>%  
 
   addPolygons(data= sectores_contorno,
               color = "black",
@@ -1159,7 +1144,7 @@ leaflet(st_zm(sectores_prox)) %>%
               color = "#f6b26b",
               fillOpacity = 1,
               radius = 2,
-              group = "Comercios SP")
+              group = "Comercios Tot")
 
 mapa
 
@@ -1177,123 +1162,387 @@ comercios_por_isocrona = st_join(comercios_tot, isocronas15_tot, join = st_inter
 
 #CALCULO LA CANTIDAD DE COMERCIOS POR ISOCRONA
 n_comercios_x_iso = comercios_por_isocrona %>% 
-  group_by(id_isocrona) %>% 
+  group_by(id_punto) %>% 
   summarise(n_comercios = n())
-
 
 vars = c("leche","harina","azucar","arroz","papa","fiambre_jc", "carne_pic")
 
 # ORGANIZO LA INFORMACION POR ISOCRONA, COMERCIO, PRODUCTO (LARGO)
 df_long <- comercios_por_isocrona %>%
-  select(id_isocrona, id_comercio, all_of(vars)) %>%
+  select(id_punto, id_comercio, all_of(vars)) %>%
   pivot_longer(cols = all_of(vars), names_to = "product", values_to = "price") %>%
   filter(!is.na(price) & price > 0)
 
-# CANASTA MAS ECONOMICA POR ISOCRONA
-# USO (p10) DE BASE EN LUGAR DE LOS VALORES MINIMOS PARA EVITAR ERRORES/OUTLIERS
-iso_prod_floor <- df_long %>%
-  group_by(id_isocrona, product) %>%
-  summarise(price_floor = quantile(price, 0.10, na.rm = TRUE), .groups = "drop")
-
-# SUMA DE LA CANASTA (unweighted). PARA UN INDICE MULTIPLICATIVO, USAR MEDIA GEOMETRICA DE LOS PRECIOS RELATIVOS.
-lcbi <- iso_prod_floor %>%
-  group_by(id_isocrona) %>%
+# CANASTA MAS ECONOMICA Y MÁS COSTOSA POR ISOCRONA
+# USO (p5 y p95) DE BASE EN LUGAR DE LOS VALORES MINIMOS Y MAXIMOS PARA EVITAR ERRORES/OUTLIERS
+iso_prod_limites <- df_long %>%
+  group_by(id_punto, product) %>%
   summarise(
-    basket_sum_min = sum(price_floor, na.rm = TRUE),
-    basket_gm_min  = exp(mean(log(price_floor), na.rm = TRUE)),  # geometric mean
-    n_products     = sum(is.finite(price_floor)),
+    p10 = quantile(price, 0.05, na.rm = TRUE),
+    pup = quantile(price, 0.95, na.rm = TRUE),
+    n   = sum(is.finite(price)),
     .groups = "drop"
-  )
+  ) %>%
+  # USO SOLO LOS PRODUCTOS CON AMBOS CUANTILES DEFINIDOS
+  filter(is.finite(p10), is.finite(pup))
 
-# MARGEN / DISPERSION POR ISOCRONA. COMPUTO p90 and p10 DE LOS PRECIOS LOG (MAS ESTABLE), DESPUES CALCULO LA DISPERSION MEDIA POR PRODUCTO
-iso_prod_spread <- df_long %>%
-  mutate(logp = log(price)) %>%
-  group_by(id_isocrona, product) %>%
-  filter(n() >= 3) %>%  # ensure enough stores for that product in the isochrone
+# Canastas por isocrona (suma y geométrica) y "margen" (brecha min–max)
+iso_canasta <- iso_prod_limites %>%
+  group_by(id_punto) %>%
   summarise(
-    p10 = quantile(logp, 0.10, na.rm = TRUE),
-    p90 = quantile(logp, 0.90, na.rm = TRUE),
-    spread_log = p90 - p10,
-    .groups = "drop"
-  )
+    # Canasta mínima (usa p10)
+    canasta_sum_min = sum(p10, na.rm = TRUE),
+    canasta_gm_min  = exp(mean(log(p10), na.rm = TRUE)),
 
-headroom <- iso_prod_spread %>%
-  group_by(id_isocrona) %>%
-  summarise(
-    headroom_log = mean(spread_log, na.rm = TRUE),
-    n_prod_spread = n(),
-    .groups = "drop"
-  )
+    # Canasta "más costosa" (usa p90/p95)
+    canasta_sum_max = sum(pup, na.rm = TRUE),
+    canasta_gm_max  = exp(mean(log(pup), na.rm = TRUE)),
 
-# 5) Combine metrics per isochrone
-#iso_metrics <- lcbi %>%
-#  left_join(headroom, by = "id_isocrona")
+    n_products_both = n(),  # nº de productos usados en ambas
+    .groups = "drop"
+  ) %>%
+  mutate(
+    # Brecha absoluta en suma y % en geométrica
+    margen_sum     = canasta_sum_max - canasta_sum_min,
+    margen_gm_pct  = canasta_gm_max / canasta_gm_min - 1,
+    # equivalente en logs (útil para tests y promedios)
+    margen_log     = log(canasta_gm_max) - log(canasta_gm_min),
+    formal = ifelse(str_starts(id_punto,"0"), 0, 1)
+  )
 ```
 
 
 ```{r}
-# 1) Filter and flag groups
-lcbi2 <- lcbi %>%                                # <- your table with id_isocrona, basket_* and n_products
-  filter(!str_detect(id_isocrona, "^(3|6)_")) %>%
-  mutate(group = if_else(str_starts(id_isocrona, "0"), "slum", "formal"))
-
-# 2) Summary table (unweighted + weighted by product coverage)
-sumtab <- lcbi2 %>%
-  group_by(group) %>%
+sumtab <- iso_canasta %>%
+  group_by(formal) %>%
   summarise(
-    n_iso        = n(),
-    # basket_sum_min
-    mean_sum     = mean(basket_sum_min, na.rm = TRUE),
-    median_sum   = median(basket_sum_min, na.rm = TRUE),
-    wmean_sum    = weighted.mean(basket_sum_min, w = n_products, na.rm = TRUE),
-    # basket_gm_min
-    mean_gm      = mean(basket_gm_min, na.rm = TRUE),
-    median_gm    = median(basket_gm_min, na.rm = TRUE),
-    wmean_gm     = weighted.mean(basket_gm_min, w = n_products, na.rm = TRUE),
+    n_iso          = n(),
+    # GM “cara”
+    mean_gm_max    = mean(canasta_gm_max, na.rm = TRUE),
+    median_gm_max  = median(canasta_gm_max, na.rm = TRUE),
+    wmean_gm_max   = weighted.mean(canasta_gm_max, n_products_both, na.rm = TRUE),
+    # Brecha (log)
+    mean_head_log  = mean(margen_log, na.rm = TRUE),
+    median_headpct = median(margen_gm_pct, na.rm = TRUE),
     .groups = "drop"
   )
-
 print(sumtab)
-
-# 3) Robust group tests (Mann–Whitney/Wilcoxon rank-sum)
-#wilcox_sum <- wilcox.test(basket_sum_min ~ group, data = lcbi2, exact = FALSE)
-#wilcox_gm  <- wilcox.test(basket_gm_min  ~ group, data = lcbi2, exact = FALSE)
-
-#wilcox_sum$p.value; wilcox_gm$p.value
 ```
+
+
 ```{r}
-library(effsize)
+# Asegura que el grupo sea factor con niveles y etiquetas claras
+iso_canasta <- iso_canasta %>%
+  mutate(grupo = factor(ifelse(formal == 1, "formal", "informal"),
+                        levels = c("formal","informal")))
 
-# Wilcoxon rank-sum (robust to non-normality)
-#wilcox.test(basket_sum_min ~ group, data = lcbi2, exact = FALSE)
-#wilcox.test(basket_gm_min  ~ group, data = lcbi2, exact = FALSE)
+# t-tests
+t_gmmax <- t.test(log(canasta_gm_max) ~ grupo, data = iso_canasta)   # WTP (cola alta)
+t_head  <- t.test(margen_log       ~ grupo, data = iso_canasta)    # brecha interna
 
-# t-test on logs → interpretable as % differences
-#t.test(log(basket_sum_min) ~ group, data = lcbi2)
-#t.test(log(basket_gm_min)  ~ group, data = lcbi2)
+# Convierte diferencia en logs -> % y orienta a (slum - formal)
+conv_pct <- function(tt){
+  nm <- tolower(names(tt$estimate))
+  m_formal   <- unname(tt$estimate[nm == "mean in group formal"])
+  m_informal <- unname(tt$estimate[nm == "mean in group informal"])
+  diff_log <- m_informal - m_formal                 # informal − formal
+  ci_log   <- sort(-tt$conf.int)                    # pasa a (informal − formal)
+  c(
+    pct_diff = 100*(exp(diff_log) - 1),
+    ci_low   = 100*(exp(ci_log[1]) - 1),
+    ci_high  = 100*(exp(ci_log[2]) - 1),
+    p_value  = unname(tt$p.value)
+  )
+}
 
-# Effect size: Cliff's delta (nonparametric)
-#cliff.delta(basket_sum_min ~ group, data = lcbi2)
-#cliff.delta(basket_gm_min  ~ group, data = lcbi2)
+res_gmmax <- conv_pct(t_gmmax)   # % dif en GM de canasta “cara” (slum − formal)
+res_head  <- conv_pct(t_head)    # % dif en margen (slum − formal)
+
+res_gmmax
+res_head
+
+# Robustez no paramétrica
+wil_gmmax <- wilcox.test(log(canasta_gm_max) ~ grupo, data = iso_canasta, exact = FALSE)
+wil_head  <- wilcox.test(margen_log       ~ grupo, data = iso_canasta, exact = FALSE)
+wil_gmmax$p.value; wil_head$p.value
 ```
-Main finding (poverty penalty on the least-cost basket)
-
-Sum of cheapest items: the slum’s basket is ~53.6% higher than the formal areas
-(log mean diff = 0.429; ratio = exp(0.429)=1.536; 95% CI [40.1%, 68.5%]; t-test p < 3e-11; Wilcoxon p ≈ 4.6e-6; Cliff’s δ = −1, large).
-
-Geometric-mean basket: the slum’s basket is ~9.73% higher
-(log mean diff = 0.0928; ratio = exp(0.0928)=1.097; 95% CI [5.0%, 14.7%]; t-test p ≈ 1.17e-4; Wilcoxon p ≈ 0.109; Cliff’s δ ≈ −0.35, medium).
-
-Why Wilcoxon differs for the geometric mean: Wilcoxon tests median differences on the raw scale and, with small n and overlapping distributions, it has less power. The t-test on logs is the most aligned with the geometric-mean construct (and is what you should report as the primary test for basket_gm_min).
-
-After excluding isochrones starting with 3_ and 6_, the least-cost basket for staples is ~54% higher in slum isochrones than in adjacent formal areas (95% CI: +40% to +68%). Using a geometric-mean basket (robust central tendency), the slum penalty is ~9.7% (95% CI: +5.0% to +14.7%).
-
-
-
-
-
-
 </details>
+
+La canasta de precios altos (p90) es 31,5% menor en isócronas informales (IC95%: −33,5% a −29,4%). Asimismo, el margen interno es 42,4% menor (IC95%: −45,2% a −39,5%), lo que sugiere menor variedad/estratificación y una menor disposición a pagar en el extremo alto respecto de las áreas formales.
+
+<details><summary> Código </summary>
+
+```{r}
+#--- 1) Cuantiles por isocrona × producto (p10 como "piso") -------------------
+iso_prod_floor <- df_long %>%
+  filter(is.finite(price), price > 0) %>%
+  group_by(id_punto, product) %>%
+  summarise(p10 = quantile(price, 0.10, na.rm = TRUE),
+            n  = dplyr::n(), .groups = "drop") %>%
+  filter(is.finite(p10))
+
+#--- 2) Etiqueta de grupo por isocrona ----------------------------------------
+# Opción A: tomarla de tu tabla (recomendado)
+iso_tags <- iso_canasta %>%
+  distinct(id_punto, grupo)   # grupo con niveles: "formal","informal"
+
+# Opción B (si no tenés iso_canasta a mano): derivar desde el id
+# iso_tags <- iso_prod_floor %>%
+#   distinct(id_punto) %>%
+#   mutate(grupo = if_else(str_starts(id_punto, "0"), "informal", "formal"))
+
+iso_prod2 <- iso_prod_floor %>%
+  inner_join(iso_tags, by = "id_punto") %>%
+  mutate(grupo = factor(grupo, levels = c("formal","informal"))) %>%
+  group_by(product) %>%
+  filter(n_distinct(grupo) == 2) %>%   # nos quedamos con productos presentes en ambos grupos
+  ungroup()
+
+#--- 3) Efecto por producto (Welch t-test en log precios) ----------------------
+per_product <- iso_prod2 %>%
+  group_by(product) %>%
+  tidyr::nest() %>%
+  mutate(
+    tt = map(data, ~ t.test(log(p10) ~ grupo, data = .x)),                     # formal vs informal
+    # diferencia en logs orientada a (informal − formal)
+    diff_log = map_dbl(tt, ~ {
+      est <- .x$estimate; nm <- tolower(names(est))
+      m_formal   <- unname(est[nm == "mean in group formal"])
+      m_informal <- unname(est[nm == "mean in group informal"])
+      m_informal - m_formal
+    }),
+    ci_log = map(tt, ~ sort(-.x$conf.int)),                                    # CI en (informal − formal)
+    pct     = 100*(exp(diff_log) - 1),
+    pct_lo  = map_dbl(ci_log, 1) %>% (\(.) 100*(exp(.) - 1))(),
+    pct_hi  = map_dbl(ci_log, 2) %>% (\(.) 100*(exp(.) - 1))(),
+    p_value = map_dbl(tt, "p.value"),
+    n_formal   = map_int(data, ~ sum(.x$grupo == "formal")),
+    n_informal = map_int(data, ~ sum(.x$grupo == "informal"))
+  ) %>%
+  select(product, pct, pct_lo, pct_hi, p_value, n_formal, n_informal) %>%
+  arrange(desc(pct))
+
+per_product
+
+#--- 4) Gráfico (igual estilo que el tuyo) -------------------------------------
+plot = ggplot(per_product, aes(x = reorder(product, pct), y = pct)) +
+  geom_pointrange(aes(ymin = pct_lo, ymax = pct_hi)) +
+  geom_hline(yintercept = 0, linetype = 2) +
+  coord_flip() +
+  labs(
+    x = NULL,
+    y = "Prima informal vs formal (%)",
+    title = "Per-product least-cost floor price (p10) — informal vs formal",
+    subtitle = "Puntos = diferencia porcentual; barras = IC95% (Welch t-test en log precios)"
+  ) +
+  theme_minimal()
+
+
+```
+</details>
+
+```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
+plot
+```
+
+----------------------
+Las diferencias de precios observadas son consistentes con una menor ingesta de carne y una mayor sustitución hacia almidones en áreas informales. En efecto, la carne presenta un sobreprecio marcado en el p10, mientras que papa resulta relativamente más barata.
+
+SUSTENTAR CON ENCUESTAS A HOGARES?
+---------------------
+<details><summary> Código </summary>
+```{r}
+min_obs = 3
+
+# 1) Cuantiles por isócrona × producto
+iso_prod <- df_long %>%
+  filter(is.finite(price), price > 0) %>%
+  group_by(id_punto, product) %>%
+  summarise(
+    p10 = quantile(price, 0.10, na.rm = TRUE),
+    pup = quantile(price, 0.90, na.rm = TRUE),
+    n   = n(),
+    .groups = "drop"
+  ) %>%
+  filter(n >= min_obs, is.finite(p10), is.finite(pup))
+
+# 2) Etiqueta de grupo y filtros globales
+iso_tags <- iso_canasta %>% distinct(id_punto, grupo)  # grupo: "formal"/"informal"
+
+iso_prod2 <- iso_prod %>%
+  filter(!str_detect(id_punto, "^(3|6)_")) %>%          # tus exclusiones
+  inner_join(iso_tags, by = "id_punto") %>%
+  mutate(grupo = factor(grupo, levels = c("formal","informal"))) %>%
+  # headroom dentro de isócrona × producto
+  mutate(headroom_log = log(pup) - log(p10),
+         headroom_pct = exp(headroom_log) - 1)
+
+# (opcional) exige cobertura mínima por grupo para cada producto
+iso_prod2 <- iso_prod2 %>%
+  group_by(product, grupo) %>% filter(n() >= 3) %>% ungroup()
+
+# 3) Diferencia de headroom por producto: (informal − formal) en %
+per_prod_head <- iso_prod2 %>%
+  group_by(product) %>%
+  tidyr::nest() %>%
+  mutate(
+    tt = map(data, ~ t.test(headroom_log ~ grupo, data = .x)),   # Welch
+    diff_log = map_dbl(tt, ~ {
+      est <- .x$estimate; nm <- tolower(names(est))
+      m_formal   <- unname(est[nm == "mean in group formal"])
+      m_informal <- unname(est[nm == "mean in group informal"])
+      m_informal - m_formal                                    # informal − formal
+    }),
+    ci_log = map(tt, ~ sort(-.x$conf.int)),                     # pasa a (informal − formal)
+    pct    = 100*(exp(diff_log) - 1),
+    pct_lo = map_dbl(ci_log, 1) %>% (\(.) 100*(exp(.) - 1))(),
+    pct_hi = map_dbl(ci_log, 2) %>% (\(.) 100*(exp(.) - 1))(),
+    p_value = map_dbl(tt, "p.value"),
+    n_formal   = map_int(data, ~ sum(.x$grupo == "formal")),
+    n_informal = map_int(data, ~ sum(.x$grupo == "informal"))
+  ) %>%
+  select(product, pct, pct_lo, pct_hi, p_value, n_formal, n_informal) %>%
+  arrange(desc(pct))
+
+per_prod_head
+
+# 4) Gráfico: diferencia de headroom (%) por producto (informal − formal)
+margen_plot = ggplot(per_prod_head, aes(x = reorder(product, pct), y = pct)) +
+  geom_pointrange(aes(ymin = pct_lo, ymax = pct_hi)) +
+  geom_hline(yintercept = 0, linetype = 2) +
+  coord_flip() +
+  labs(
+    x = NULL,
+    y = "Diferencia de headroom (%) — informal − formal",
+    title = "Headroom por producto (p90 vs p10)",
+    subtitle = "Puntos = diferencia porcentual; barras = IC95% (Welch t-test sobre log-ratios)"
+  ) +
+  theme_minimal()
+```
+</details>
+
+```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
+margen_plot
+```
+
+<details><summary> Código </summary>
+```{r}
+iso_canasta2 <- iso_canasta %>%
+  mutate(
+    grupo = factor(ifelse(formal == 1, "formal", "informal"),
+                   levels = c("formal","informal")),
+    carga_log   = log(canasta_gm_min) - log(canasta_gm_max),  # = -headroom_log
+    carga_share = exp(carga_log)                              # = GM_min / GM_max
+  )
+
+# Descriptivos
+iso_canasta2 %>%
+  group_by(grupo) %>%
+  summarise(
+    mean_share   = mean(carga_share, na.rm = TRUE),
+    median_share = median(carga_share, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Test en logs (interpretación % al exponenciar)
+t_carga <- t.test(carga_log ~ grupo, data = iso_canasta2)  # informal vs formal en logs
+
+# Razón de “carga relativa” (informal/formal) y su IC95% en %
+rat   <- exp(unname(t_carga$estimate["mean in group informal"] -
+                    t_carga$estimate["mean in group formal"]))
+ci    <- exp(sort(-t_carga$conf.int))  # pasa a (informal − formal)
+pct   <- 100*(rat - 1)
+ci_lo <- 100*(ci[1] - 1); ci_hi <- 100*(ci[2] - 1)
+
+c(rel_diff_pct = pct, ci_low = ci_lo, ci_high = ci_hi, p_value = t_carga$p.value)
+```
+</details>
+
+En nuestra muestra, el costo relativo del piso de precios (GM_min/GM_max) es significativamente mayor en isócronas informales, aun cuando algunos precios absolutos sean menores. Esto implica que los bienes básicos representan una mayor fracción del ‘techo’ de precios local (proxy de poder adquisitivo/WTP) en zonas informales.
+
+El índice de carga relativa carga=GM_min/GM_max es 73.6% mayor en las isócronas informales (IC95%: 65.3%–82.3%, p ≈ 1.0e−17).
+
+Es decir que, dado el “techo” local de precios (proxy de WTP), el costo de la canasta barata representa una fracción mucho mayor en áreas informales.
+
+<details><summary> Código </summary>
+```{r}
+iso_prod <- df_long %>%
+  filter(is.finite(price), price > 0) %>%
+  group_by(id_punto, product) %>%
+  summarise(
+    p10 = quantile(price, 0.10, na.rm = TRUE),
+    p_up = quantile(price, 0.90, na.rm = TRUE),
+    n   = n(),
+    .groups = "drop"
+  ) %>%
+  filter(n >= min_obs, is.finite(p10), is.finite(p_up))
+
+# etiqueta de grupo por isócrona
+iso_tags <- iso_canasta %>% distinct(id_punto, grupo)   # "formal"/"informal"
+
+iso_prod2 <- iso_prod %>%
+  # excluye isócronas con poca info si corresponde
+  filter(!str_detect(id_punto, "^(3|6)_")) %>%
+  inner_join(iso_tags, by = "id_punto") %>%
+  mutate(
+    grupo = factor(grupo, levels = c("formal","informal")),
+    carga_log = log(p10) - log(p_up),         # log(p10/p90) (o p95)
+    carga_pct = exp(carga_log) - 1
+  )
+
+# (opcional) excluir productos dominantes como carne
+# iso_prod2 <- filter(iso_prod2, product != "carne_pic")
+
+# exige cobertura mínima por grupo (evita comparar con 1–2 isócronas)
+iso_prod2 <- iso_prod2 %>%
+  group_by(product, grupo) %>% filter(n() >= 3) %>% ungroup()
+
+#--------------------------
+# 2) Diferencia por producto: (informal − formal) en %
+#    Welch t-test sobre logs (equivale a % al exponenciar)
+#--------------------------
+per_prod_carga <- iso_prod2 %>%
+  group_by(product) %>%
+  nest() %>%
+  mutate(
+    tt = map(data, ~ t.test(carga_log ~ grupo, data = .x)),
+    diff_log = map_dbl(tt, ~ {
+      est <- .x$estimate; nm <- tolower(names(est))
+      m_formal   <- unname(est[nm == "mean in group formal"])
+      m_informal <- unname(est[nm == "mean in group informal"])
+      m_informal - m_formal                      # informal − formal
+    }),
+    ci_log = map(tt, ~ sort(-.x$conf.int)),      # pasa CI a (informal − formal)
+    pct    = 100*(exp(diff_log) - 1),
+    pct_lo = map_dbl(ci_log, 1) %>% (\(.) 100*(exp(.) - 1))(),
+    pct_hi = map_dbl(ci_log, 2) %>% (\(.) 100*(exp(.) - 1))(),
+    p_value = map_dbl(tt, "p.value"),
+    n_formal   = map_int(data, ~ sum(.x$grupo == "formal")),
+    n_informal = map_int(data, ~ sum(.x$grupo == "informal"))
+  ) %>%
+  select(product, pct, pct_lo, pct_hi, p_value, n_formal, n_informal) %>%
+  arrange(desc(pct))
+
+per_prod_carga
+
+carga_plot = ggplot(per_prod_carga, aes(x = reorder(product, pct), y = pct)) +
+  geom_pointrange(aes(ymin = pct_lo, ymax = pct_hi)) +
+  geom_hline(yintercept = 0, linetype = 2) +
+  coord_flip() +
+  labs(
+    x = NULL,
+    y = "Diferencia de carga (%) — informal − formal",
+    title = "carga por producto (p10/p90)",
+    subtitle = "Puntos = diferencia porcentual; barras = IC95% (Welch t-test sobre log-ratios)"
+  ) +
+  theme_minimal()
+```
+</details>
+
+```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
+carga_plot
+```
+
 
 <h2>
   IRRIGACIÓN </br>
@@ -1302,7 +1551,8 @@ After excluding isochrones starting with 3_ and 6_, the least-cost basket for st
 
 Intersectando el callejero con los polígonos del Barrio Mugica y de los sectores próximos puedo calcular la irrigación vial al polígono.
 
-<details><summary> Código inútil-arreglar </summary>
+<details><summary> Código </summary>
+## Callejero
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 #IMPORTO EL CALLEJERO:
 callejero = st_read("data/calles.shp") %>% 
@@ -1637,7 +1887,7 @@ delitos_sp_n = delitos_sp %>%
   summarise(cantidad=n())
 
 delitos_bm_n = delitos_bm %>% 
-  group_by(id_isocrona,tipo) %>% 
+  group_by(id_punto,tipo) %>% 
   summarise(cantidad=n())
 
 ```
