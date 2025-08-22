@@ -1,7 +1,7 @@
 ---
-title: "Diferencias en el acceso al mercado alimentario desde un barrio formal/informal"
+title: "Impuesto a la Pobreza"
 description: |
-  Caso de estudio: Barrio Padre Carlos Mugica y su entorno
+  Diferencias en el acceso al mercado alimentario desde un barrio formal/informal, Caso de estudio Barrio Padre Carlos Mugica y su entorno
 ---
 
   
@@ -96,7 +96,6 @@ $(document).ready(function() {
 });
 </script>
 
-<small class="text-muted"> En el marco de este estudio, se entenderá por mercado alimentario local al conjunto de condiciones y actores que determinan la disponibilidad, el acceso y el costo de los productos alimenticios básicos en un territorio determinado. </small>
 
 <h2>
   CONCEPTOS CLAVE 
@@ -106,42 +105,84 @@ Barrio popular, Asentamiento informal, Canasta básica, Mercado alimentario loca
 
 
 <h2>
-  INTRODUCCIÓN </br>
-  <small class="text-muted"> |  Acceso al mercado alimentario, fundamentos e importancia en el proceso de integración  </small>
+  PROBLEMA | Impuesto a la pobreza
 </h2>
 
-Por medio de este estudio se busca analizar los factores que influyen en el costo de los insumos alimentarios cotidianos en barrios populares, tomando como caso de estudio al Barrio Padre Carlos Mugica (también conocido como Barrio 31), ubicado en la Ciudad Autónoma de Buenos Aires, Argentina.
+Múltiples estudios sostienen que los bienes y servicios básicos son más costosos para las poblaciones socioeconómicamente vulnerables. Si bien este fenómeno se puede observar también en zonas de la periferia urbana y rurales, es de particular interés su ocurrencia en las ciudades, donde la oferta se presenta en una aparente cercanía, lo que se esperaría que disminuya parcialmente la brecha. Sin embargo, la misma persiste debido a diversos factores como la existencia de barreras físicas urbanas, las características de la oferta real y la reducida capacidad de compra al por mayor, entre otros. 
 
-La elección de este tema se fundamenta en la relevancia que tiene una alimentación adecuada para el desarrollo físico, cognitivo y social de las personas, especialmente en contextos de vulnerabilidad. Asimismo, en un escenario de urbanización creciente y desigual, cobra cada vez más importancia el diseño de políticas públicas e intervenciones urbanas que promuevan la integración sostenible de los sectores informales al tejido económico y social de la ciudad.
-
-En este marco, resulta pertinente indagar en las condiciones económicas, espaciales y urbanísticas que inciden sobre el costo y la disponibilidad de la canasta básica alimentaria en barrios populares. Identificar posibles correlaciones entre factores como el acceso físico (infraestructura vial y transporte), la densidad de comercios minoristas, la inseguridad, o las dinámicas de informalidad económica, puede contribuir a delinear estrategias más eficaces de intervención pública o privada que mejoren las condiciones de vida de sus habitantes desde una perspectiva territorial y alimentaria.
-
-Como señalan Yavich et al. (2010), si bien el hambre suele asociarse con fenómenos rurales como la baja producción agrícola, las sequías o las hambrunas, diversos estudios han demostrado que en los entornos urbanos el hambre no necesariamente está vinculada a la disponibilidad o producción de alimentos. En las ciudades, otros factores —como el nivel de ingresos, el acceso inadecuado a servicios básicos y las condiciones precarias de vida— tienen un peso más determinante. En estos contextos, la malnutrición es, ante todo, una consecuencia de la imposibilidad de adquirir alimentos en cantidad y calidad suficientes.
-
-Además, los alimentos representan entre el 60% y el 80% del gasto total de los hogares urbanos pobres en países en desarrollo. Por ello, las variaciones en los ingresos o en los precios de los alimentos se traducen directamente en un aumento de los niveles de malnutrición en las zonas urbanas.
-
-En la Ciudad Autónoma de Buenos Aires, las villas y asentamientos presentan distintos grados de integración con el tejido urbano formal. Mientras que algunos se encuentran físicamente inmersos en zonas consolidadas de la ciudad, con una mayor conectividad y proximidad a servicios y equipamientos, otros se hallan más aislados o fragmentados, con barreras físicas, institucionales o sociales que dificultan su articulación con el entorno. Esta heterogeneidad en los niveles de integración urbana se traduce, entre otras consecuencias, en diferencias significativas en el acceso a la oferta de insumos alimentarios, tanto en términos de disponibilidad como de precios.
 
 
 <h2>
-  EL PROBLEMA 
+  PREGUNTAS
 </h2>
 
-A pesar de los avances en materia de urbanización e integración social, los residentes de barrios populares como el Barrio Padre Carlos Mugica en la Ciudad de Buenos Aires continúan enfrentando condiciones desiguales en el acceso a bienes esenciales, entre ellos los alimentos. Si bien el costo de los alimentos suele analizarse desde una perspectiva macroeconómica, en contextos urbanos fragmentados como este, las condiciones del entorno físico y socioeconómico pueden generar distorsiones a escala local que afectan directamente los precios y la disponibilidad de productos básicos.
-
-Actualmente, existe escasa evidencia empírica que permita comprender hasta qué punto factores como la localización, la accesibilidad, la densidad comercial o la seguridad inciden en el costo de los alimentos en barrios populares en comparación con sectores formales circundantes. Esta falta de información limita la capacidad de diseñar intervenciones específicas que mejoren la equidad territorial en el acceso a la alimentación. El presente estudio busca abordar esta brecha, explorando los determinantes locales del costo de una sub-canasta básica en el Barrio Mugica y su entorno inmediato.
+¿En qué medida se evidencia el impuesto a la pobreza en el Barrio Padre Carlos Mugica? 
+¿Se pueden identificar factores urbanos como la accesibilidad, la integración física, la densidad comercial o la seguridad que incidan negativamente en el funcionamiento del mercado alimentario local? 
+¿Qué tipo de intervenciones podrían contribuir a corregir sus distorsiones?
 
 
 <h2>
-  LA PREGUNTA
+  CONTRIBUCIÓN | Revisión de la bibliografía
 </h2>
 
-¿En qué medida factores urbanos como la accesibilidad, la integración física, la densidad comercial o la seguridad inciden en el funcionamiento del mercado alimentario local en barrios populares como el Barrio Padre Carlos Mugica, y qué tipo de intervenciones podrían contribuir a corregir sus distorsiones?
+La literatura existente aborda el problema con distintos enfoques desde su denominación como impuesto a la pobreza o “ghetto tax” en el libro “Los pobres pagan más” (The Poor Pay More) de David Caplovitz publicado en 1967. 
+A partir de entonces, la gran cantidad de estudios publicados en torno al tema han reafirmado la influencia que tienen los factores territoriales sobre el fenómeno. Las barreras urbanas representan una limitación tanto para compradores como para los vendedores que necesitan transportar las mercaderías aumentando sus costos operativos (Chung y Myers, 1999). La poca presencia de sucursales de grandes cadenas en sectores urbanos informales disminuye ese tipo de oferta, generalmente más económica debido a los beneficios de las economías de escala. (Kaufman et al., 1997). Las limitaciones de espacio también afectan la capacidad de acopio, al igual que la irregularidad de los servicios o la disponibilidad de infraestructura para mantener los productos frescos, particularmente en el rubro alimenticio. La dificultad o incapacidad de conseguir financiación, al igual que las trabas en el acopio también disminuye la posibilidad de hacer compras al por mayor, perjudicando a compradores y vendedores que no pueden beneficiarse por las promociones (Kunreuther, 1973).
+En algunas publicaciones se estima que los hogares con menor nivel adquisitivo invierten más tiempo en la búsqueda de precios bajos y descuentos (Becker, 1965), pero esto se pone en duda en el presente estudio, debido a las limitaciones temporales que tienen las poblaciones más vulnerables debido a la gran carga horaria laboral, el cuidado de menores, el trabajo en el hogar, y las distancias reales a los locales con mejor oferta.
+Existen análisis desde la perspectiva de los consumidores (Davies y Lorna, 2020/ Allcott, 2019), propuestas de medición de las diferencias (Corfe y Keohane, 2018), estudios específicamente orientados a bienes alimentarios ( Kaufman, MacDonald,Lutz, y Smallwood, 1997/ Kurtzon y McClelland, 2010), comparaciones entre distintos barrios (Kern, Auchincloss , Robinson, Stehr y Pham-Kanter, 2017), calidad y cantidad de la oferta (Gosliner, Brown, Sun, Woodward-Lopez y Crawford, 2018)
+Es evidente que en los barrios informales urbanos, muchas de las condiciones mencionadas en la literatura se presentan en niveles extremos. El Indice Barrial de Precios (ISEPCI) elabora relevamientos mensuales de canastas en barrios populares de la Argentina, y reportes como el FARCO (2024) tratan también a nivel nacional la problemática del consumo y seguridad alimentaria en barrios populares.
+Es por este motivo, que se propone el estudio del caso Barrio Padre Carlos Mugica, para evaluar, en primer lugar, si existe dicha prima a la pobreza, y de ser así, estimar su dimensión. 
+Como sucede en otras villas y asentamientos de la ciudad, éste colinda con zonas que alojan hogares de gran poder adquisitivo, lo que representa una complejidad extra a la hora de comparar el barrio con su entorno formal.
+A partir de esto, se busca definir una metodología reproducible para hacerlo en otros barrios informales de la Ciudad de Buenos Aires y poder cruzarlo con variables territoriales determinando su interrelación. Entender cuáles son los factores urbanos más influyentes permitiría diseñar políticas públicas para combatir la problemática.
+Un estudio muy reciente del BID, Impuesto a la pobreza en la Argentina (Mitchell, Macció, Salvia, Poy y Pla, 2024) comparte gran parte del enfoque y algunos aspectos metodológicos, pero su abordaje se orienta a los  territorios periféricos del AMBA, donde demuestran una presencia clara de este fenómeno. Su aporte se volvió muy valioso y central para el desarrollo del presente análisis.
 
 
-<details><summary> Código </summary> 
-```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
+<h2>
+  PROPUESTA METODOLÓGICA
+</h2>
+
+Se estudió el caso del Barrio Mugica en relación a su entorno formal.
+Para definir el recorte territorial, se tomó el Barrio Mugica en su totalidad (polígono definido en la ley Nº6.129) y se definieron 4 sectores formales de mayor proximidad al mismo, con una superficie total similar, y con una densidad de viviendas mayor a 3500 para garantizar que en ellos predomina un uso residencial.
+Dentro de cada uno de los sectores resultantes se tomaron 9 puntos aleatorios para representar a los hogares, y se trazaron isocronas a 5, 10 y 15 minutos de distancia a pie, cubriendo así la totalidad de los polígonos y parte de las zonas colindantes.
+Se tuvo en cuenta este rango temporal y este tipo de traslado, considerando la baja proporción de vehículos particulares dentro del Barrio Mugica, la baja irrigación de transporte público en la zona, y el reducido tiempo disponible para hacer las compras, debido al cuidado de menores, tareas del hogar, y tiempos de trabajo y desplazamiento.
+En la primera parte del estudio se busca determinar si existe un impuesto a la pobreza en el caso de estudio, y de ser así, definir su magnitud.
+Para estudiar el costo de los productos alimentarios a los cuales tienen acceso los hogares de cada sector, se relevaron los comercios comprendidos dentro de las isocronas. 
+En base a esto se pudo extraer una sub-canasta alimentaria de precio mínimo disponible.
+Para definir qué alimentos relevar, se tomó la canasta básica alimentaria, y se seleccionaron 7 productos en base a los siguientes criterios:
+1) Representatividad: Productos de consumo proporcionalmente elevado dentro de los valores definidos para un adulto (ver tabla de referencia), de categorías diversas, y que permitirían elaborar las 4 comidas. (sin incluir frutas ni hortalizas)
+2) Homogeneidad: Siempre se compararon las mismas unidades de venta. 
+A falta de poder mantener constante la marca/calidad de los mismos, se seleccionó el artículo de cada categoría con el precio más económico disponible en cada local.
 
 
-```
-</details>
+La encuesta se compuso de la siguiente manera:
+Preguntas/relevamiento cuantitativo:
+¿El establecimiento es sucursal de una cadena de supermercados?
+¿El establecimiento pudo ser relevado?
+Precio de:
+Leche (1 litro)
+Harina de trigo 000 (1kg)
+Azúcar blanco (1kg)
+Arroz blanco largo fino (1kg)
+Papa “negra” (1kg)
+Jamón cocido (100gr)
+Carne picada “común” (1kg)
+
+
+Preguntas cualitativas:
+¿Cuáles son los principales factores que encarecen los productos que vendés?
+¿Alquilás o sos propietario/a del local?
+Valor del alquiler en caso de que aplique.
+¿Encontrás dificultades para abastecerte de algunos productos? ¿Cuáles?
+Otros comentarios.
+
+
+Se calculó el tamaño de la muestra necesaria para un nivel de confianza del 95% y un margen de error del 10%. En el Barrio Mugica, teniendo en cuenta el tamaño del universo (518 comercios que comprenden los rubros: Almacén, Kiosco, Carnicería, Fiambrería y Verdulería. Base territorial 2023), se relevaron entonces 82 comercios.
+En los sectores formales, se calculó el tamaño de la muestra basándose en un universo de N comercios relevados en el territorio y complementados con una revisión de establecimientos registrados en Google Maps, y de los no registrados, pero visibles por medio de Google Street View. La muestra debería estar compuesta por n observaciones.
+A partir de estos valores se calculó la sub-canasta más económica y la más costosa por isocrona. Con la más costosa se estimó una disposición a pagar que se usa para representar el nivel adquisitivo de ambas poblaciones. La brecha entre las canastas más costosas y las más económicas define el margen con el que cuentan los hogares, y por consiguiente la carga que estos gastos representan en relación a los ingresos. Con esto se define el valor del impuesto a la pobreza.
+En la segunda parte, se cruzan los datos del impuesto a la pobreza con factores territoriales para buscar posibles influencias. 
+Las variables a analizar son:
+Cantidad y tipo de oferta, medida en tipos de comercio por área (según rubro y si son cadenas o no). Base de datos de elaboración propia. Relevamiento territorial complementado.
+Irrigación de transportes públicos, medida en cantidad y proximidad de paradas, estaciones y puntos de ecobici; y a su vez en nivel de conectividad de dichos transportes por subconectividad, distancias de recorrido y frecuencias. Bases de datos de BA DATA, Paradas de colectivos, Recorrido colectivos, Recorrido de Metrobús, Estaciones de Metrobús, Estaciones de Ferrocarril, Red de Ferrocarril, Estaciones de Ecobici, Red de ciclovías.
+Accesibilidad, medida en cantidad de puntos de acceso a los polígonos, y metros de vía pública ponderados según tipo (ruta, calle, avenida, pasillo). Base de datos de BA DATA, Callejero.
+Formalidad de los comercios. Base de datos de elaboración propia. Relevamiento territorial complementado.
+Inseguridad medida en densidad de delitos en la zona. Base de datos de BA DATA, Delitos 2023.
+

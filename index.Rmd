@@ -86,6 +86,7 @@ Este análisis permitirá evaluar las diferencias relativas de precios entre los
 
 Finalmente, a partir de los resultados obtenidos, se buscará esbozar propuestas de intervención —desde el ámbito público, privado o comunitario— orientadas a reducir las distorsiones o inequidades observadas en el mercado alimentario local, y contribuir así a mejorar las condiciones de vida de los habitantes del Barrio Mugica desde una perspectiva territorial.
 
+
 <h2>
   LA UNIDAD TERRITORIAL </br>
   <small class="text-muted"> |  Recorte y selección </small>
@@ -1332,7 +1333,7 @@ plot = ggplot(per_product, aes(x = reorder(product, pct), y = pct)) +
   labs(
     x = NULL,
     y = "Prima informal vs formal (%)",
-    title = "Per-product least-cost floor price (p10) — informal vs formal",
+    title = "Precio base/menor por producto (p10) — informal vs formal",
     subtitle = "Puntos = diferencia porcentual; barras = IC95% (Welch t-test en log precios)"
   ) +
   theme_minimal()
@@ -1412,8 +1413,8 @@ margen_plot = ggplot(per_prod_head, aes(x = reorder(product, pct), y = pct)) +
   coord_flip() +
   labs(
     x = NULL,
-    y = "Diferencia de headroom (%) — informal − formal",
-    title = "Headroom por producto (p90 vs p10)",
+    y = "Diferencia de margen (%) — informal − formal",
+    title = "Margen por producto (p90 vs p10)",
     subtitle = "Puntos = diferencia porcentual; barras = IC95% (Welch t-test sobre log-ratios)"
   ) +
   theme_minimal()
