@@ -1,0 +1,110 @@
+---
+title: "+Info"
+description: |
+  Anexos
+---
+
+```{r, include=FALSE}
+options(scipen = 999)
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library(data.table)
+library(dplyr)
+library(DT)
+library(googlesheets4)
+library(stringr)
+library(tidygeocoder)
+library(tidyr)
+library(tidyverse)
+```
+
+<h2>
+  ANEXO I </br>
+  <small class="text-muted"> |  Formulario de relevamiento </small>
+</h2>
+
+La encuesta se compuso de la siguiente manera:
+  *Preguntas/relevamiento cuantitativo:
+
+    ¿El establecimiento es sucursal de una cadena de supermercados?
+    
+    ¿El establecimiento pudo ser relevado?
+    
+    Precio de:
+      Leche (1 litro)
+      Harina de trigo 000 (1kg)
+      Azúcar blanco (1kg)
+      Arroz blanco largo fino (1kg)
+      Papa “negra” (1kg)
+      Jamón cocido (100gr)
+      Carne picada “común” (1kg)
+
+
+  *Preguntas cualitativas:
+  
+    ¿Cuáles son los principales factores que encarecen los productos que vendés?
+    
+    ¿Alquilás o sos propietario/a del local?
+    
+    Valor del alquiler en caso de que aplique.
+    
+    ¿Encontrás dificultades para abastecerte de algunos productos? ¿Cuáles?
+    
+    Otros comentarios.
+
+
+
+<h2>
+  ANEXO II </br>
+  <small class="text-muted"> |  Relevamiento territorial Barrio Mugica </small>
+</h2>
+
+```{r,echo = FALSE, warning=FALSE}
+comercios_bm = st_read("data/comercios_bm.gpkg")
+  
+
+datatable(comercios_bm, 
+          style = 'bootstrap', 
+          class = 'cell-border stripe',
+          options = list(
+            searching = FALSE,
+            rownames = FALSE,
+            pageLength = 10,
+            dom = 't',
+            scrollY = '300px',
+            language = list(zeroRecords = "No existen datos para los requerimientos seleccionados"),
+            #autoWidth = TRUE,
+      columnDefs = list(
+        list(targets = 0, visible = FALSE)
+          )))
+
+```
+
+
+<h2>
+  ANEXO III </br>
+  <small class="text-muted"> |  Relevamiento territorial Sectores Formales Próximos </small>
+</h2>
+
+```{r,echo = FALSE, warning=FALSE}
+comercios_sp = st_read("data/comercios_sp.gpkg") %>% 
+  select(id_comercio,rubro,leche,harina,azucar,arroz,papa,fiambre_jc,carne_pic,cadena)
+  
+
+datatable(comercios_sp, 
+          style = 'bootstrap', 
+          class = 'cell-border stripe',
+          options = list(
+            searching = FALSE,
+            rownames = FALSE,
+            pageLength = 10,
+            dom = 't',
+            scrollY = '300px',
+            language = list(zeroRecords = "No existen datos para los requerimientos seleccionados"),
+            #autoWidth = TRUE,
+      columnDefs = list(
+        list(targets = 0, visible = FALSE)
+          )))
+
+```

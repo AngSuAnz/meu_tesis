@@ -16,6 +16,8 @@ navbar:
   right:
     - text: "+Info"
       menu:
+        - text: "Anexos"
+          href: anexos.html
         - text: "Fuentes"
           href: fuentes.html
         - text: "About"

@@ -4,8 +4,10 @@ description: |
   Información adicional
 ---
 
-**Director de tesis** | xxx
+**Directora de la Maestría** | Cynthia Goytia
 
-**Alumna**            | Ángeles Suarez Anzorena
+**Director de tesis**        | Jonathan Cohen
 
-**UTDT**              | Maestría en Economía Urbana
+**Alumna**                   | Ángeles Suarez Anzorena
+
+**UTDT**                     | Maestría en Economía Urbana
