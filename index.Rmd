@@ -1833,7 +1833,7 @@ datatable(intersecciones_tabla%>%
     rownames = FALSE,
     pageLength = 5,
     dom = 't',
-    scrollY = '120px',
+    scrollY = '200px',
     language = list(zeroRecords = "No existen datos para los requerimientos seleccionados"),
     columnDefs = list(
       list(targets = 0, visible = FALSE), # hide column 0
@@ -1892,12 +1892,12 @@ callejero_sp = st_intersection(callejero, sectores_contorno)  %>%
 tipo_calles = bind_rows(callejero_sp, callejero_bm) 
 
 tipo_calles = tipo_calles %>% 
-  select(-c(sector, n_tipo)) %>% 
+  select(-c(sector, n_tipo))%>% 
+  mutate(tipo_c = str_to_title(tipo_c)) %>% 
   rename("Sector" = barrio,
          "Tipo de via" = tipo_c,
          "Longitud Total" = longitud_tot,
-         "Ratio por tipo" = tipo_ratio) %>% 
-  mutate("Tipo de via" = str_to_title("Tipo de via"))
+         "Ratio por tipo" = tipo_ratio) 
 
 ```
 </details>
