@@ -6,7 +6,6 @@ description: |
 
   
 ```{r librerias, include=FALSE}
-
 options(scipen = 999)
 
 library(distill)
@@ -201,7 +200,7 @@ mapa
 transformar_todo_a_crs(22185)
 ```
 
-Imagen 2. Radios Censales que se intersectan con el buffer (imagen 2) 
+Imagen 2. Radios Censales comprendidos dentro del buffer (Imagen 1) 
 
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 transformar_todo_a_crs(4326)
@@ -399,6 +398,7 @@ rm(kmeans_result,area_formal,cantidad_sectores_prox, centros)
 </details>
 
 Imagen 5. Radios censales seleccionados agrupados en:
+  
   * 1 sector informal: el Barrio Mugica, y 
   * 4 sectores formales: Los "sectores próximos" numerados 01 a 04.
 
@@ -753,7 +753,7 @@ mapa
 
 ```
 
-Imagen 6. Isocronas de 10 minutos a pie desde los puntos aleatotios dentro del Barrio Mugica y de cada uno de los 4 sectores próximos.
+Imagen 6. Isocronas de 10 minutos a pie desde los puntos aleatorios dentro del Barrio Mugica y de cada uno de los 4 sectores próximos.
 
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 
@@ -935,7 +935,9 @@ Comercios de proximidad dentro del Barrio Mugica
 
 # Habiendo hecho todo lo de arriba, ahora solo llamo la base de comercios del bm
 comercios_bm = st_read("data/comercios_bm.gpkg") %>% 
-  st_transform(22185)
+  st_transform(22185) %>% 
+  rename(geometry = geom) %>% 
+  mutate(tanda = 0)
 
 ```
 ## Comercios SP
@@ -1090,6 +1092,7 @@ transformar_todo_a_crs(22185)
 Imagen 7. Comercios relevados dentro del sector informal y los sectores formales próximos.
 
 En el mapa se pueden observar:
+
   * En la capa de los comercios, al hacer click sobre los puntos: Los rubros de los establecimientos, y si son franquicias de cadenas o no.
   * Los sectores y sus puntos aleatorios.
   * Las isocronas de 5minutos a partir de cada punto.
@@ -1205,10 +1208,11 @@ Los relevamientos se realizaron siguiendo las preguntas del <em>Anexo I - Formul
 ## PRODUCTOS
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 #TRANSFORMO LA BASE DE COMERCIOS EN BASE DE PRODUCTOS DESGLOSADOS.
-productos_sp1 = comercios_sp %>% 
-  select(id_comercio,rubro,leche,harina,azucar,arroz,papa,fiambre_jc,carne_pic,cadena,tanda)
 
-productos_sp = productos_sp1 %>% 
+#SP-------------------------------------------------------------------
+
+productos_sp = comercios_sp %>% 
+  select(id_comercio,rubro,leche,harina,azucar,arroz,papa,fiambre_jc,carne_pic,cadena,tanda) %>%  
   pivot_longer(
     cols = c(leche, harina, azucar, arroz, papa, fiambre_jc, carne_pic),
     names_to  = "producto",
@@ -1221,36 +1225,311 @@ productos_sp = productos_sp1 %>%
   select(producto_id,producto, precio, id_comercio, rubro, cadena, tanda, geometry) %>% 
   filter(!is.na(precio)) # saca los NA (combos donde ese local no tiene ese producto
 
-rm(productos_sp1)
+#BM----------------------------------------------------------------------
+
+productos_bm = comercios_bm %>% 
+  select(sector_bm,id_comercio,id_direcciones,rubro,leche,harina,azucar,arroz,papa,fiambre_jc,carne_pic,cadena,tanda) %>%  
+  pivot_longer(
+    cols = c(leche, harina, azucar, arroz, papa, fiambre_jc, carne_pic),
+    names_to  = "producto",
+    values_to = "precio"
+  ) %>% 
+  mutate(
+    producto_id = paste(producto, id_comercio, sep = "_"),
+    precio = round(precio, digits=2)
+  ) %>% 
+  select(producto_id,producto, precio, id_comercio, rubro, cadena, tanda, geometry) %>% 
+  filter(!is.na(precio)) # saca los NA (combos donde ese local no tiene ese producto
 ```
+
+#CANASTAS MIN Y MAX POR PUNTO
 
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 #FILTRO LOS PRODUCTOS/COMERCIOS QUE QUEDAN DENTRO DE CADA ISOCRONA
-comercios_en_isocrona = st_join(
+
+#SP_05--------------------------------------------------------------------------------
+comercios_en_isocrona05_sp = st_join(
   productos_sp,    # puntos (comercios)
   isocronas05_sp,         # polígonos (uno por habitante)
   join = st_within
 )
 
+#DEFINO UNA FUNCION PARA CALCULAR CANASTAS MINIMAS Y MAXIMAS DISPONIBLES POR PUNTO
+calcular_canasta = function(df, tipo = c("min", "max")) {
+  tipo = match.arg(tipo)
+  slice_fn = if (tipo == "min") slice_min else slice_max
+  
+  df %>%
+    st_drop_geometry() %>% 
+    filter(!is.na(id_punto), !is.na(precio)) %>%
+    group_by(id_punto, producto) %>%
+    slice_fn(precio, n = 1, with_ties = FALSE) %>%
+    ungroup() %>%
+    group_by(id_punto) %>%
+    summarise(
+      "precio_canasta_{tipo}" := sum(precio),
+      n_productos_cubiertos    = n(),
+      n_locales_necesarios     = n_distinct(id_comercio),
+      productos_faltantes      = 7 - n(),
+      .groups = "drop"
+    )
+}
+
 #CALCULO CUAL ES LA CANASTA MÁS ECONÓMICA QUE SE PUEDE CONSEGUIR COMPRAR DESDE CADA PUNTO ALEATORIO
-canasta_minima = comercios_en_isocrona  %>% 
-  filter(!is.na(id_punto))  %>% 
-  filter(!is.na(precio))  %>% 
-  group_by(id_punto, producto)  %>% 
-  slice_min(precio, n = 1, with_ties = FALSE)  %>% 
-  ungroup()
+
+resumen_canasta_min <- calcular_canasta(comercios_en_isocrona05_sp, "min")
+resumen_canasta_max <- calcular_canasta(comercios_en_isocrona05_sp, "max")
 
 #HAGO UN RESUMEN POR PUNTO: Cuanto sale la canasta más barata, Cuantos productos cubre, A cuántos lugares distintos tengo que ir para conseguirla?
-resumen_canasta = canasta_minima  %>% 
-  group_by(id_punto)  %>% 
-  summarise(
-    precio_canasta        = sum(precio),
-    n_productos_cubiertos = n(),
-    n_locales_necesarios  = n_distinct(id_comercio),
-    productos_faltantes   = 7 - n(),
-    .groups = "drop"
-  )
+resumen_canasta05_sp <- left_join(resumen_canasta_min, 
+                                  resumen_canasta_max %>% select(id_punto, precio_canasta_max),
+                                by = "id_punto") %>% 
+  mutate(dif_precio = precio_canasta_max - precio_canasta_min)
+
+resumen_canasta05_sp = puntos_aleatorios_sp %>% 
+  select(id_punto)%>%
+  left_join(resumen_canasta05_sp, by = "id_punto")
+#SP_10------------------------------------------------------
+
+comercios_en_isocrona10_sp = st_join(
+  productos_sp,    # puntos (comercios)
+  isocronas10_sp,         # polígonos (uno por habitante)
+  join = st_within
+)
+
+#CALCULO CUAL ES LA CANASTA MÁS ECONÓMICA QUE SE PUEDE CONSEGUIR COMPRAR DESDE CADA PUNTO ALEATORIO
+resumen_canasta_min <- calcular_canasta(comercios_en_isocrona10_sp, "min")
+resumen_canasta_max <- calcular_canasta(comercios_en_isocrona10_sp, "max")
+
+#HAGO UN RESUMEN POR PUNTO: Cuanto sale la canasta más barata, Cuantos productos cubre, A cuántos lugares distintos tengo que ir para conseguirla?
+resumen_canasta10_sp <- left_join(resumen_canasta_min, 
+                                resumen_canasta_max %>% select(id_punto, precio_canasta_max),
+                                by = "id_punto") %>% 
+  mutate(dif_precio = precio_canasta_max - precio_canasta_min)
+
+resumen_canasta10_sp = puntos_aleatorios_sp %>% 
+  select(id_punto)%>%
+  left_join(resumen_canasta10_sp, by = "id_punto")
+
+#BM_05---------------------------------------------------------------------------------
+
+comercios_en_isocrona05_bm = st_join(
+  productos_bm,    # puntos (comercios)
+  isocronas05_bm,         # polígonos (uno por habitante)
+  join = st_within
+)
+
+resumen_canasta_min <- calcular_canasta(comercios_en_isocrona05_bm, "min")
+resumen_canasta_max <- calcular_canasta(comercios_en_isocrona05_bm, "max")
+
+#HAGO UN RESUMEN POR PUNTO: Cuanto sale la canasta más barata, Cuantos productos cubre, A cuántos lugares distintos tengo que ir para conseguirla?
+resumen_canasta05_bm <- left_join(resumen_canasta_min, 
+                                  resumen_canasta_max %>% select(id_punto, precio_canasta_max),
+                                by = "id_punto") %>% 
+  mutate(dif_precio = precio_canasta_max - precio_canasta_min)
+
+resumen_canasta05_bm = puntos_aleatorios_bm %>% 
+  select(id_punto)%>%
+  left_join(resumen_canasta05_bm, by = "id_punto")
+#BM_10---------------------------------------------------
+
+comercios_en_isocrona10_bm = st_join(
+  productos_bm,    # puntos (comercios)
+  isocronas10_bm,         # polígonos (uno por habitante)
+  join = st_within
+)
+
+resumen_canasta_min <- calcular_canasta(comercios_en_isocrona10_bm, "min")
+resumen_canasta_max <- calcular_canasta(comercios_en_isocrona10_bm, "max")
+
+#HAGO UN RESUMEN POR PUNTO: Cuanto sale la canasta más barata, Cuantos productos cubre, A cuántos lugares distintos tengo que ir para conseguirla?
+resumen_canasta10_bm <- left_join(resumen_canasta_min, 
+                                resumen_canasta_max %>% select(id_punto, precio_canasta_max),
+                                by = "id_punto") %>% 
+  mutate(dif_precio = precio_canasta_max - precio_canasta_min)
+
+resumen_canasta10_bm = puntos_aleatorios_bm %>% 
+  select(id_punto)%>%
+  left_join(resumen_canasta10_bm, by = "id_punto")
+
+rm(resumen_canasta_min, resumen_canasta_max)
 ```
+</details>
+
+Imagen 8. Precios mínimos y máximos de sub-canastas a las que se puede acceder desde cada punto a una distancia a pie de hasta 5 minutos.
+
+  El mapa incluye información de:
+  
+  * Precios máximos y mínimos.
+  * Cantidad de productos que se consiguen (el máximo es 7, corresponde a sub-canasta completa)
+  * Cantidad de productos que faltan para completar la sub-canasta.
+  * Cantidad de locales diferentes que hace falta alcanzar para obtener ese valor (min o max.)
+  * Diferencia de precio entre ambas sub-canastas (min y max.)
+    
+    
+<small style="color: #a64d79;"> [ Considerar si acá sería interesante mostrar las isocronas también o es demasiada info. Capaz conviene sacar los puntos de los locales? ] </small>
+
+```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
+
+transformar_todo_a_crs(4326)
+
+mapa =
+leaflet(st_zm(sectores_prox)) %>%
+  addTiles() %>%
+  addProviderTiles(providers$CartoDB.Positron, group = "OSM",
+                   options = providerTileOptions(minzoom = 1, maxzoom = 15)) %>%
+  addProviderTiles(providers$Esri.WorldImagery, group = "Satelite") %>%
+  addLayersControl(
+    baseGroups = c("OSM","Satelite"), 
+    overlayGroups = c("Barrio Mugica", "Oferta a 5min por punto BM", "Sectores Proximos", "Oferta a 5min por punto SP", "Comercios"))%>% 
+  
+
+
+  addPolygons(data= b_mugica,
+              color = "black",
+              weight = 1,
+              opacity = 0.7,
+              fillColor = "white",
+              fillOpacity = 0,
+              group = "Barrio Mugica") %>%
+  
+  addPolygons(data= sectores_contorno,
+              color = "black",
+              weight = 0.6,
+              opacity = 0.7,
+              fillColor = "white",
+              fillOpacity = 0,
+              group = "Sectores Proximos") %>%
+  
+    addCircleMarkers(data = comercios_tot,
+              fillColor = "#f6b26b",
+              weight = 0.5,
+              color = "#f6b26b",
+              fillOpacity = 1,
+              radius = 2,
+              group = "Comercios") %>% 
+
+  
+  addCircleMarkers(data=resumen_canasta05_bm,
+              fillColor = "black",
+              weight = 4,
+              color = "black",
+              fillOpacity = 0.5,
+              popup = ~paste("<strong>ID Punto:</strong>", id_punto,
+                             "</br> <strong>Sub-canasta Min:</strong>", precio_canasta_min,
+                             "</br> <strong>Sub-canasta Max:</strong>", precio_canasta_max,
+                             "</br> <strong>Sub-canasta Dif:</strong>", dif_precio,
+                             "</br> <strong>Productos Cubiertos:</strong>", n_productos_cubiertos,
+                             "</br> <strong>Productos Faltantes:</strong>", productos_faltantes,
+                             "</br> <strong>N Locales:</strong>", n_locales_necesarios),
+              radius = 2,
+              group = "Oferta a 5min por punto BM") %>%
+  
+  addCircleMarkers(data=resumen_canasta05_sp,
+              fillColor = "black",
+              weight = 4,
+              color = "black",
+              fillOpacity = 0.5,
+              popup = ~paste("<strong>ID Punto:</strong>", id_punto,
+                             "</br> <strong>Sub-canasta Min:</strong>", precio_canasta_min,
+                             "</br> <strong>Sub-canasta Max:</strong>", precio_canasta_max,
+                             "</br> <strong>Sub-canasta Dif:</strong>", dif_precio,
+                             "</br> <strong>Productos Cubiertos:</strong>", n_productos_cubiertos,
+                             "</br> <strong>Productos Faltantes:</strong>", productos_faltantes,
+                             "</br> <strong>N Locales:</strong>", n_locales_necesarios),
+              radius = 2,
+              group = "Oferta a 5min por punto SP")
+ 
+mapa
+
+transformar_todo_a_crs(22185)
+```
+
+Imagen 9. Precios mínimos y máximos de sub-canastas a las que se puede acceder desde cada punto a una distancia a pie de hasta 10 minutos.
+
+(El mapa contiene los mismos tipos de información que el anterior, pero en este caso se visualiza teniendo en cuenta locales comprendidos dentro de las isocronas de 10 minutos de distancia a pie desde cada punto)
+    
+    
+<small style="color: #a64d79;"> [ Considerar si acá sería interesante mostrar las isocronas también o es demasiada info. Capaz conviene sacar los puntos de los locales? ] </small>
+
+```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
+
+transformar_todo_a_crs(4326)
+
+mapa =
+leaflet(st_zm(sectores_prox)) %>%
+  addTiles() %>%
+  addProviderTiles(providers$CartoDB.Positron, group = "OSM",
+                   options = providerTileOptions(minzoom = 1, maxzoom = 15)) %>%
+  addProviderTiles(providers$Esri.WorldImagery, group = "Satelite") %>%
+  addLayersControl(
+    baseGroups = c("OSM","Satelite"), 
+    overlayGroups = c("Barrio Mugica", "Oferta a 10min por punto BM", "Sectores Proximos", "Oferta a 10min por punto SP", "Comercios"))%>% 
+  
+
+
+  addPolygons(data= b_mugica,
+              color = "black",
+              weight = 1,
+              opacity = 0.7,
+              fillColor = "white",
+              fillOpacity = 0,
+              group = "Barrio Mugica") %>%
+  
+  addPolygons(data= sectores_contorno,
+              color = "black",
+              weight = 0.6,
+              opacity = 0.7,
+              fillColor = "white",
+              fillOpacity = 0,
+              group = "Sectores Proximos") %>%
+  
+    addCircleMarkers(data = comercios_tot,
+              fillColor = "#f6b26b",
+              weight = 0.5,
+              color = "#f6b26b",
+              fillOpacity = 1,
+              radius = 2,
+              group = "Comercios") %>% 
+
+  
+  addCircleMarkers(data=resumen_canasta10_bm,
+              fillColor = "black",
+              weight = 4,
+              color = "black",
+              fillOpacity = 0.5,
+              popup = ~paste("<strong>ID Punto:</strong>", id_punto,
+                             "</br> <strong>Sub-canasta Min:</strong>", precio_canasta_min,
+                             "</br> <strong>Sub-canasta Max:</strong>", precio_canasta_max,
+                             "</br> <strong>Sub-canasta Dif:</strong>", dif_precio,
+                             "</br> <strong>Productos Cubiertos:</strong>", n_productos_cubiertos,
+                             "</br> <strong>Productos Faltantes:</strong>", productos_faltantes,
+                             "</br> <strong>N Locales:</strong>", n_locales_necesarios),
+              radius = 2,
+              group = "Oferta a 10min por punto BM") %>%
+  
+  addCircleMarkers(data=resumen_canasta10_sp,
+              fillColor = "black",
+              weight = 4,
+              color = "black",
+              fillOpacity = 0.5,
+              popup = ~paste("<strong>ID Punto:</strong>", id_punto,
+                             "</br> <strong>Sub-canasta Min:</strong>", precio_canasta_min,
+                             "</br> <strong>Sub-canasta Max:</strong>", precio_canasta_max,
+                             "</br> <strong>Sub-canasta Dif:</strong>", dif_precio,
+                             "</br> <strong>Productos Cubiertos:</strong>", n_productos_cubiertos,
+                             "</br> <strong>Productos Faltantes:</strong>", productos_faltantes,
+                             "</br> <strong>N Locales:</strong>", n_locales_necesarios),
+              radius = 2,
+              group = "Oferta a 10min por punto SP")
+ 
+mapa
+
+transformar_todo_a_crs(22185)
+```
+
+<details><summary> Código </summary>
+# REVISAR SI USO ESTO O NO...
 
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 # Función que dado un id_punto, encuentra el par de locales 
@@ -1324,16 +1603,28 @@ Comercios por isocrona
 ## AHORA LA BORRO, RECUPERAR DESPUES!!!
 </details>
 
+<h2>
+  OTRAS VARIABLES </br>
+  <small class="text-muted"> |  Análisis de variables urbanas </small>
+</h2>
+
+Con la intención de encontrar relaciones que puedan ser causales entre factores urbanos y la condición de la oferta en los sectores formales y el informal, se analizan:
+
+  * La irrigación de cada sector, definida como la cantidad de puntos de acceso y las características de las vías públicas comprendidas dentro de los territorios.
+  * Accesibilidad medios de transporte?
+  * Seguridad expresada en crimen?
+  
+  <small style="color: #a64d79;"> [ Expresar esto más piola y decidir qué variables quiero/puedo incluir en el análisis teniendo en cuenta las bases de datos disponibles y la representatividad (?) de las mismas... Por ejemplo crimen me interesa, pero no se como son los reportes de crimen en zonas informales, hay subdeclaración? Investigar ] </small>
 
 <h2>
   IRRIGACIÓN </br>
-  <small class="text-muted"> |  Calles comprendidas en los sectores y accesos </small>
+  <small class="text-muted"> |  Accesos y calles comprendidas dentro de los sectores </small>
 </h2>
 
-Intersectando el callejero con los polígonos del Barrio Mugica y de los sectores próximos puedo calcular la irrigación vial al polígono.
+Intersectando el callejero de la ciudad con los polígonos del Barrio Mugica y de los sectores próximos se calcula la irrigación vial al polígono en términos de puntos de acceso.
 
 <details><summary> Código </summary>
-## Callejero
+## IRRIGACION
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 #IMPORTO EL CALLEJERO:
 callejero = st_read("data/calles.shp") %>% 
@@ -1370,6 +1661,7 @@ n_interseccion_callejero_sp <- interseccion_callejero_sp %>%
 ```
 </details>
 
+Imagen 10. Puntos de acceso por polígono.
 
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 
@@ -1517,27 +1809,31 @@ transformar_todo_a_crs(22185)
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 n_interseccion_callejero_bm = n_interseccion_callejero_bm %>% 
   mutate(sector = "Barrio Mugica 0") %>% 
-  rename(n_intersecciones = n)
+  rename("Cantidad de Puntos de Acceso" = n)
 
 n_interseccion_callejero_sp = n_interseccion_callejero_sp %>% 
-  mutate(sector = paste0("Sector Proximo ", sector))
+  mutate(sector = paste0("Sector Proximo ", sector)) %>% 
+  rename("Cantidad de Puntos de Acceso" = n_intersecciones)
 
-intersecciones_tabla = bind_rows(n_interseccion_callejero_sp, n_interseccion_callejero_bm) 
+intersecciones_tabla = bind_rows(n_interseccion_callejero_sp, n_interseccion_callejero_bm) %>% 
+  rename("Sector" = sector)
 ```
 </details>
+
+Tabla 1. Cantidad de puntos de acceso por sector.
 
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 tabla =
 datatable(intersecciones_tabla%>% 
-            select(sector, n_intersecciones), 
+            select("Sector", "Cantidad de Puntos de Acceso"), 
   style = 'bootstrap', 
   class = 'cell-border stripe',
   options = list(
     searching = FALSE,
     rownames = FALSE,
-    pageLength = 10,
+    pageLength = 5,
     dom = 't',
-    scrollY = '300px',
+    scrollY = '120px',
     language = list(zeroRecords = "No existen datos para los requerimientos seleccionados"),
     columnDefs = list(
       list(targets = 0, visible = FALSE), # hide column 0
@@ -1549,12 +1845,14 @@ tabla
 
 ```
 
+Tabla 2. Longitud de vías públicas dentro de cada sector por tipo.
 
-
-Avenida:
-Calee:
-Pasaje:
-Pasillo: Ancho variable  de 2 m a 1,35 m.  No es calle oficial por ley 6129. 
+  Tipos de vías públicas y definiciones:
+  
+  * Avenida: Vía pública de 20 m o más de ancho (CPU 1.2.1.2, GCBA).
+  * Calle: Vía pública de entre 6 y 19,99 m de ancho (CPU 1.2.1.2, GCBA).
+  * Pasaje: Vía pública de ancho reducido, generalmente menor a 6 m (algunos de uso peatonal o vehicular restringido). El Código Urbanístico vigente (Ley 6.764) regula específicamente los pasajes, estableciendo una altura máxima de 9 metros para construcciones en los más de 400 pasajes de la Ciudad. IADB
+  * Pasillo: Ancho variable de 2 m a 1,35 m. No es calle oficial por Ley 6129
 
 <details><summary> Código </summary>
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
@@ -1576,7 +1874,8 @@ callejero_bm = st_read("data/informacion_territorial.gpkg", layer = "calles") %>
   
 
 #TIPO/ANCHO DE CALLES EN ST
-callejero_sp = st_intersection(callejero, sectores_contorno) %>% 
+callejero_sp = st_intersection(callejero, sectores_contorno)  %>% 
+  st_transform(22185) %>%  
   mutate(tipo_c = as.factor(tipo_c),
          longitud_calle = length(geometry)) %>% 
   group_by(sector, tipo_c) %>% 
@@ -1592,14 +1891,22 @@ callejero_sp = st_intersection(callejero, sectores_contorno) %>%
 
 tipo_calles = bind_rows(callejero_sp, callejero_bm) 
 
+tipo_calles = tipo_calles %>% 
+  select(-c(sector, n_tipo)) %>% 
+  rename("Sector" = barrio,
+         "Tipo de via" = tipo_c,
+         "Longitud Total" = longitud_tot,
+         "Ratio por tipo" = tipo_ratio) %>% 
+  mutate("Tipo de via" = str_to_title("Tipo de via"))
+
 ```
 </details>
 
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 tabla =
-datatable(tipo_calles%>% 
-            select(barrio, tipo_c, longitud_tot, tipo_ratio) %>% 
-            st_drop_geometry(), 
+datatable(tipo_calles%>%  
+            st_drop_geometry()%>%
+            select(Sector, everything()), 
   style = 'bootstrap', 
   class = 'cell-border stripe',
   options = list(
@@ -1619,6 +1926,8 @@ tabla
 
 ```
 
+<small style="color: #a64d79;"> [ Construir un indicador único que represente irrigación para poder incluir los valores a la regresión después ] </small>
+
 <h2>
   SEGURIDAD </br>
   <small class="text-muted"> |  Delitos en 2023 </small>
@@ -1626,7 +1935,7 @@ tabla
 
 
 <details><summary> Código </summary>
-```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
+```{r, out.width='100%', fig.align='left', fig.height = 6}
 
 #LLAMO LA BASE DE DELITOS Y GUARDO SOLAMENTE LOS PUNTOS QUE ME INTERESAN PARA LLAMARLO LUEGO SIN TENER UNA BASE TAN GRANDE:
 delitos = read_excel(
@@ -1673,16 +1982,3 @@ delitos_bm_n = delitos_bm %>%
 
 ```
 </details>
-
-
-
-<details><summary> Código </summary>
-```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
-
-
-
-```
-</details>
-
-ggplot(b_buffer) +
-  geom_sf()
