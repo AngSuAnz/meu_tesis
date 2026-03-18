@@ -456,8 +456,11 @@ Para estudiar el acceso que tiene la población a los locales comerciales de ven
 <small style="color: #a64d79;"> [ Justificar selección de "a pie" como medio de transporte y distancias medidas en minutos considerando que son compras de alimentos cotidianos y usos/costumbres comunes para los habitantes de la ciudad. (Fuentes posibles: Ciudades de 15m de Moreno (suboptima para mi gusto), https://pmc.ncbi.nlm.nih.gov/articles/PMC9331805/ o https://www.cooperativaciencia.cl/salud/2024/10/28/periferia-de-la-region-metropolitana-concentra-la-mayor-cantidad-de-desiertos-alimentarios/) Estudiar y desarrollar ] </small>
 
 <details><summary> Código </summary>
-## Puntos Aleatorios e isocronas bm
+## PUNTOS ALEATORIOS
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
+
+# PUNTOS ALEATORIOS BM --------------------------------------------------------------
+
 #LLAMO A LOS SECTORES DEL BARRIO MUGICA PARA QUE LOS PUNTOS ALEATORIOS ESTÉN MEJOR DISTRIBUIDOS. TODA ESTA PARTE LA HAGO UNA SOLA VEZ.
 
 #GENERO Y GUARDO LOS PTOS ALEATORIOS PORQUE SINO CADA VEZ QUE CORRO EL CODIGO, SON NUEVOS:
@@ -477,75 +480,9 @@ puntos_aleatorios_bm = st_read("data/puntos_aleatorios_bm.geojson") %>%
          sector = 0) %>% 
   select(-c(feat_id1,fid))
 
-#CONSTRUYO ISOCRONAS DE 15M
-#lista_isocronas_bm_15 <- lapply(puntos_aleatorios_bm$geometry, function(point) {
-#  osrmIsochrone(loc = st_coordinates(point),
-#                breaks = seq(from = 0, to = 15, by = 15),
-#                res = 40,
-#                osrm.profile = "foot")
-#})
 
-#Combino las isocronas
-#isocronas15_bm = do.call(rbind, lista_isocronas_bm_15)
+# PUNTOS ALEATORIOS SP ---------------------------------------------------------------
 
-#st_write(isocronas15_bm, "data/isocronas15_bm.geojson")
-
-#--------------------------
-
-#CONSTRUYO ISOCRONAS DE 10M
-#lista_isocronas_bm_10 <- lapply(puntos_aleatorios_bm$geometry, function(point) {
-#  osrmIsochrone(loc = st_coordinates(point),
-#                breaks = seq(from = 0, to = 10, by = 10),
-#                res = 40,
-#                osrm.profile = "foot")
-#})
-
-#Combino las isocronas
-#isocronas10_bm = do.call(rbind, lista_isocronas_bm_10)
-
-#st_write(isocronas10_bm, "data/isocronas10_bm.geojson")
-
-#--------------------------
-
-#CONSTRUYO ISOCRONAS DE 05M
-#lista_isocronas_bm_05 <- lapply(puntos_aleatorios_bm$geometry, function(point) {
-#  osrmIsochrone(loc = st_coordinates(point),
-#                breaks = seq(from = 0, to = 5, by = 5),
-#                res = 40,
-#                osrm.profile = "foot")
-#})
-
-#Combino las isocronas
-#isocronas05_bm = do.call(rbind, lista_isocronas_bm_05)
-
-#st_write(isocronas05_bm, "data/isocronas05_bm.geojson")
-
-#--------------------------------------------------------------------------------------
-
-isocronas15_bm = st_read("data/isocronas15_bm.geojson")%>% 
-                    st_transform(22185) %>% 
-                    st_make_valid()%>% 
-                    mutate(id_punto = paste0("0_",as.character(row_number())),
-                           sector = 0) %>% 
-                    select(sector,id_punto) 
-
-isocronas10_bm = st_read("data/isocronas10_bm.geojson")%>% 
-                    st_transform(22185) %>% 
-                    st_make_valid()%>% 
-                    mutate(id_punto = paste0("0_",as.character(row_number())),
-                           sector = 0) %>%
-                    select(sector,id_punto) 
-
-isocronas05_bm = st_read("data/isocronas05_bm.geojson")%>% 
-                    st_transform(22185) %>% 
-                    st_make_valid()%>% 
-                    mutate(id_punto = paste0("0_",as.character(row_number())),
-                           sector = 0) %>%
-                    select(sector,id_punto)
-                    
-```
-## Puntos Aleatorios e isocronas sp
-```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 #ISOCRONAS SECTORES PROXIMOS
 sectores_contorno = sectores_prox %>% 
   group_by(sector) %>% 
@@ -573,88 +510,103 @@ puntos_aleatorios_sp = st_read("data/puntos_aleatorios_sp.geojson") %>%
   clean_names() %>% 
   mutate(sector=as.numeric(sector))
 
-#CONSTRUYO ISOCRONAS DE 15M
-#lista_isocronas_sp_15_2 = lapply(seq_len(nrow(puntos_aleatorios_sp)), function(i) {
-#  pt  <- puntos_aleatorios_sp[i, ]  # one-row sf (POINT)
-#  iso <- osrmIsochrone(
-#    loc = pt,                 # pass the sf row directly (no lon/lat cols needed)
-#    breaks = c(0, 15),
-#    res = 40,
-#    osrm.profile = "foot"
-#  )
-#  mutate(iso, id_punto = pt$id_punto, sector = pt$sector)
-#})
+# PUNTOS ALEATORIOS TOT --------------------------------------------------------
+puntos_aleatorios_tot = rbind(puntos_aleatorios_bm,puntos_aleatorios_sp)%>% 
+  st_transform(4326)
+                    
+```
 
-# Combine sf rows
-#isocronas15_sp_2 = do.call(rbind, lista_isocronas_sp_15_2)
+## ISOCRONAS
+```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 
-#st_write(isocronas15_sp_2, "data/isocronas15_sp.geojson")
+#LLAMO LAS BASES GUARDADAS------------------------------------------------------------
 
-#--------------------------------------------------------
-#CONSTRUYO ISOCRONAS DE 10M
-#lista_isocronas_sp_10_2 = lapply(seq_len(nrow(puntos_aleatorios_sp)), function(i) {
-#  pt  <- puntos_aleatorios_sp[i, ]  # one-row sf (POINT)
-#  iso <- osrmIsochrone(
-#    loc = pt,                 # pass the sf row directly (no lon/lat cols needed)
-#    breaks = seq(from = 0, to = 10, by = 10),
-#    res = 40,
-#    osrm.profile = "foot"
-#  )
-#  mutate(iso, id_punto = pt$id_punto, sector = pt$sector)
-#})
-
-# Combine sf rows
-#isocronas10_sp_2 = do.call(rbind, lista_isocronas_sp_10_2)
-
-#st_write(isocronas10_sp_2, "data/isocronas10_sp.geojson")
-
-#--------------------------------------------------------
-#CONSTRUYO ISOCRONAS DE 5M
-#lista_isocronas_sp_05_2 = lapply(seq_len(nrow(puntos_aleatorios_sp)), function(i) {
-#  pt  <- puntos_aleatorios_sp[i, ]  # one-row sf (POINT)
-#  iso <- osrmIsochrone(
-#    loc = pt,                 # pass the sf row directly (no lon/lat cols needed)
-#    breaks = seq(from = 0, to = 5, by = 5),
-#    res = 40,
-#    osrm.profile = "foot"
-#  )
-#  mutate(iso, id_punto = pt$id_punto, sector = pt$sector)
-#})
-
-# Combine sf rows
-#isocronas05_sp_2 = do.call(rbind, lista_isocronas_sp_05_2)
-
-#st_write(isocronas05_sp_2, "data/isocronas05_sp.geojson")
-
-#--------------------------------------------------------------------------------------
-
-isocronas15_sp = st_read("data/isocronas15_sp.geojson")%>% 
+isocronas10_bm = st_read("data/isocronas10_bm.geojson")%>% 
                     st_transform(22185) %>% 
-                    st_make_valid() %>% 
-                    mutate(sector=as.numeric(sector))
+                    st_make_valid()%>% 
+                    mutate(sector = 0) %>%
+  select(sector,id_punto) 
 
-isocronas15_tot = bind_rows(isocronas15_bm,isocronas15_sp)
-
-
-#---------------------------------------------------------
+isocronas05_bm = st_read("data/isocronas05_bm.geojson")%>% 
+                    st_transform(22185) %>% 
+                    st_make_valid()%>% 
+                    mutate(sector = 0) %>%
+                    select(sector,id_punto)
 
 isocronas10_sp = st_read("data/isocronas10_sp.geojson")%>% 
                     st_transform(22185) %>% 
                     st_make_valid() %>% 
                     mutate(sector=as.numeric(sector))
 
-isocronas10_tot = bind_rows(isocronas10_bm,isocronas10_sp)
-
-#---------------------------------------------------------
 
 isocronas05_sp = st_read("data/isocronas05_sp.geojson")%>% 
                     st_transform(22185) %>% 
                     st_make_valid() %>% 
                     mutate(sector=as.numeric(sector))
 
-isocronas05_tot = bind_rows(isocronas05_bm,isocronas05_sp)
+
+#---------------------------------------------------------
+
+isocronas05_tot = bind_rows(isocronas05_bm,isocronas05_sp) %>% 
+  select(sector,id_punto)
+
+isocronas10_tot = bind_rows(isocronas10_bm,isocronas10_sp) %>% 
+  select(sector,id_punto)
+```
+
+```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
+
+transformar_todo_a_crs(4326)
+
+mapa =
+leaflet(st_zm(sectores_prox)) %>%
+  addTiles() %>%
+  addProviderTiles(providers$CartoDB.Positron, group = "OSM",
+                   options = providerTileOptions(minzoom = 1, maxzoom = 15)) %>%
+  addProviderTiles(providers$Esri.WorldImagery, group = "Satelite") %>%
+  addLayersControl(
+    baseGroups = c("OSM","Satelite"), 
+    overlayGroups = c("Isocronas Barrio Mugica","Isocronas Barrio Mugica c", "Barrio Mugica", "Puntos Aleatorios BM"))%>% 
+  
+  addPolygons(data= isocronas05_bm %>% filter(id_punto == "0_1"),
+              color = "#a64d79",
+              weight = 1,
+              opacity = 0.7,
+              fillColor = "#a64d79",
+              fillOpacity = 0.4,
+              popup = ~paste("<strong> ID_punto: </strong>", id_punto),
+              group = "Isocronas Barrio Mugica") %>%
+  
+
+  addPolygons(data= b_mugica,
+              color = "black",
+              weight = 1,
+              opacity = 0.7,
+              fillColor = "white",
+              fillOpacity = 0,
+              group = "Barrio Mugica") %>%
+
+  addPolygons(data= sectores_contorno,
+              color = "black",
+              weight = 0.6,
+              opacity = 0.7,
+              fillColor = "white",
+              fillOpacity = 0,
+              group = "Sectores Proximos") %>% 
+  
+    addCircleMarkers(data=puntos_aleatorios_sp,
+              fillColor = "black",
+              weight = 3,
+              color = "black",
+              fillOpacity = 0.5,
+              radius = 2,
+              popup = ~paste("<strong> ID_punto: </strong>", id_punto),
+              group = "Puntos Aleatorios BM") 
+
+mapa
 
 ```
+
   
 </details>
 
@@ -918,7 +870,7 @@ Comercios de proximidad dentro del Barrio Mugica
 #  select(-geometry)
   
 
-#comercios_bm_local_geom = left_join(comercios_bm_local, comercios2_bm, by = "direccion") %>% 
+#comercios_bm_local_geom = left_join(comercios_bm_local, comercios2_bm, by = #"direccion") %>% 
 #  mutate(relevado = as.factor(if_else(is.na(leche), 0, 1))) %>% 
 #  st_as_sf() %>% 
 #  st_transform(22185)
@@ -944,149 +896,23 @@ comercios_bm = st_read("data/comercios_bm.gpkg") %>%
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 # HAGO TODO ESTO UNA SOLA VEZ PARA AGILIZAR ------------------------------------------
 
-#IMPORTO LOS COMERCIOS MAPEADOS DE CABA Y LOS FILTRO PARA QUEDARME CON LOS QUE CAEN EN LAS ISOCRONAS DE LOS SP
-#comercios_sp1 = st_read("data/meu_tesis_supermercados_caba.kml") %>% 
-#  st_make_valid() %>% 
-#  st_zm() %>% 
-#  st_transform(22185) %>% 
-#  st_filter(isocronas15_sp) %>% 
-#  clean_names() %>% 
-#  select(-description) %>% 
-#  rename(rubro = name) %>% 
-#  mutate(cadena = "si",
-#         id_comercio = paste0("csp_", str_pad(1000:(999 + n()), width = 4, pad = "0"))) #%>% 
-#  filter(!grepl("1005|1006",id_comercio))
+comercios_sp = read_excel("data/comercios_territorio_sp.xlsx", 
+                           sheet = "datos_limpios") %>%
+  clean_names() %>%
+  mutate(across(c(leche, harina, azucar, arroz, papa, fiambre_jc, carne_pic),
+                ~ if_else(. == 0, NA_real_, .))) %>% 
+  filter(!is.na(id_comercio))
   
 
+comercios_sp$geometry <- st_as_sfc(comercios_sp$geometry)
 
-#comercios_sp2 = read_excel("data/comercios_territorio_sp.xlsx", 
-#                           sheet = "datos_limpios") %>%
-#  clean_names() %>%
-#  mutate(across(c(leche, harina, azucar, arroz, papa, fiambre_jc, carne_pic),
-#                ~ if_else(. == 0, NA_real_, .))) %>% 
-#  filter(!is.na(fecha_hora_cest))
-  
-
-#comercios_sp2$geometry <- st_as_sfc(comercios_sp2$geometry)
-
-#comercios_sp2 = comercios_sp2 %>% 
-#                st_as_sf(crs = 4326) %>% 
-#                st_transform(22185)
-
-#comercios_sp = bind_rows(comercios_sp2,comercios_sp1)
-
-#rm(comercios_sp1,comercios_sp2)
-
-#st_write(comercios_sp,"data/comercios_sp.gpkg")
-
-# Habiendo hecho todo lo de arriba, ahora solo llamo la base de comercios del bm
-comercios_sp = st_read("data/comercios_sp.gpkg") %>% 
-  st_transform(22185) %>% 
-  rename(geometry = geom)
+comercios_sp = comercios_sp %>% 
+                st_as_sf(crs = 4326) %>% 
+                st_transform(22185)
 
 comercios_tot = bind_rows(comercios_sp, comercios_bm)
 ```
-# MAPA PARA CHEQUEAR EQUIVALENCIAS!! - BORRAR DESPUÉS
 
-```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
-
-transformar_todo_a_crs(4326)
-
-mapa_chequeo =
-leaflet(st_zm(sectores_prox)) %>%
-  addTiles() %>%
-  addProviderTiles(providers$CartoDB.Positron, group = "OSM",
-                   options = providerTileOptions(minzoom = 1, maxzoom = 15)) %>%
-  addProviderTiles(providers$Esri.WorldImagery, group = "Satelite") %>%
-  addLayersControl(
-    baseGroups = c("OSM","Satelite"), 
-    overlayGroups = c("Barrio Mugica", "Isocronas Sector 1", "Isocronas Sector 2", "Isocronas Sector 3", "Isocronas Sector 4", "Sectores Proximos", "Puntos Aleatorios SP", "Comercios Tot", "Comercios Tanda 2"))%>% 
-  
-
-
-  addPolygons(data= b_mugica,
-              color = "black",
-              weight = 1,
-              opacity = 0.7,
-              fillColor = "white",
-              fillOpacity = 0,
-              group = "Barrio Mugica") %>%
-
-  addPolygons(data= isocronas15_sp %>% filter(sector=="1"),
-              color = ~pal(sector),
-              weight = 0.6,
-              opacity = 0.7,
-              fillColor = ~pal(sector),
-              fillOpacity = 0.4,
-              group = "Isocronas Sector 1") %>% 
-  
-    addPolygons(data= isocronas15_sp%>% filter(sector=="2"),
-              color = ~pal(sector),
-              weight = 0.6,
-              opacity = 0.7,
-              fillColor = ~pal(sector),
-              fillOpacity = 0.4,
-              group = "Isocronas Sector 2") %>% 
-  
-    addPolygons(data= isocronas15_sp%>% filter(sector=="3"),
-              color = ~pal(sector),
-              weight = 0.6,
-              opacity = 0.7,
-              fillColor = ~pal(sector),
-              fillOpacity = 0.4,
-              group = "Isocronas Sector 3") %>% 
-  
-    addPolygons(data= isocronas15_sp %>% filter(sector=="4"),
-              color = ~pal(sector),
-              weight = 0.6,
-              opacity = 0.7,
-              fillColor = ~pal(sector),
-              fillOpacity = 0.4,
-              group = "Isocronas Sector 4") %>%  
-
-  addPolygons(data= sectores_contorno,
-              color = "black",
-              weight = 0.6,
-              opacity = 0.7,
-              fillColor = "white",
-              fillOpacity = 0,
-              group = "Sectores Proximos") %>% 
-  
-
-  addCircleMarkers(data=puntos_aleatorios_sp,
-              fillColor = "black",
-              weight = 0.5,
-              color = "black",
-              fillOpacity = 0.5,
-              radius = 2,
-              group = "Puntos Aleatorios SP") %>% 
-  
-  
-  addCircleMarkers(data = comercios_tot %>% 
-                     filter(!grepl("2",tanda)),
-              fillColor = "#f6b26b",
-              weight = 1,
-              color = "#f6b26b",
-              fillOpacity = 1,
-              radius = 2,
-              popup = ~paste("<strong>ID:</strong>", id_comercio,"<strong>RUBRO:</strong>", rubro,"<strong>ARROZ:</strong>", arroz, "<strong>HARINA:</strong>", harina, "<strong>PAPA:</strong>", papa, "<strong>TANDA:</strong>", tanda),
-              group = "Comercios Tot") %>% 
-
-  
-  addCircleMarkers(data = comercios_tot%>% 
-                     filter(grepl("2",tanda)),
-              fillColor = "red",
-              weight = 1,
-              color = "red",
-              fillOpacity = 1,
-              radius = 2,
-              popup = ~paste("<strong>ID:</strong>", id_comercio,"<strong>RUBRO:</strong>", rubro,"<strong>ARROZ:</strong>", arroz, "<strong>HARINA:</strong>", harina, "<strong>PAPA:</strong>", papa, "<strong>TANDA:</strong>", tanda),
-              group = "Comercios Tanda 2")
-
-mapa_chequeo
-
-transformar_todo_a_crs(22185)
-```
 </details>
 
 Imagen 7. Comercios relevados dentro del sector informal y los sectores formales próximos.
@@ -1096,6 +922,7 @@ En el mapa se pueden observar:
   * En la capa de los comercios, al hacer click sobre los puntos: Los rubros de los establecimientos, y si son franquicias de cadenas o no.
   * Los sectores y sus puntos aleatorios.
   * Las isocronas de 5minutos a partir de cada punto.
+  
 
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 
@@ -1109,7 +936,7 @@ leaflet(st_zm(sectores_prox)) %>%
   addProviderTiles(providers$Esri.WorldImagery, group = "Satelite") %>%
   addLayersControl(
     baseGroups = c("OSM","Satelite"), 
-    overlayGroups = c("Barrio Mugica", "Isocronas Sector 1", "Isocronas Sector 2", "Isocronas Sector 3", "Isocronas Sector 4", "Sectores Proximos", "Puntos Aleatorios SP", "Comercios Tot"))%>% 
+    overlayGroups = c("Barrio Mugica", "Isocronas BM", "Isocronas Sector 1", "Isocronas Sector 2", "Isocronas Sector 3", "Isocronas Sector 4", "Sectores Proximos", "Puntos Aleatorios SP", "Comercios Tandas 1 y 2", "Comercios Tandas 3 y 4"))%>% 
   
 
 
@@ -1120,8 +947,17 @@ leaflet(st_zm(sectores_prox)) %>%
               fillColor = "white",
               fillOpacity = 0,
               group = "Barrio Mugica") %>%
+  
+  
+    addPolygons(data= isocronas05_bm,
+              color = "#a64d79",
+              weight = 0.6,
+              opacity = 0.7,
+              fillColor = "#a64d79",
+              fillOpacity = 0.4,
+              group = "Isocronas BM") %>% 
 
-  addPolygons(data= isocronas05_sp %>% filter(sector=="1"),
+  addPolygons(data= isocronas05_tot %>% filter(sector=="1"),
               color = ~pal(sector),
               weight = 0.6,
               opacity = 0.7,
@@ -1129,7 +965,7 @@ leaflet(st_zm(sectores_prox)) %>%
               fillOpacity = 0.4,
               group = "Isocronas Sector 1") %>% 
   
-    addPolygons(data= isocronas05_sp%>% filter(sector=="2"),
+    addPolygons(data= isocronas05_tot %>% filter(sector=="2"),
               color = ~pal(sector),
               weight = 0.6,
               opacity = 0.7,
@@ -1137,7 +973,7 @@ leaflet(st_zm(sectores_prox)) %>%
               fillOpacity = 0.4,
               group = "Isocronas Sector 2") %>% 
   
-    addPolygons(data= isocronas05_sp%>% filter(sector=="3"),
+    addPolygons(data= isocronas05_tot %>% filter(sector=="3"),
               color = ~pal(sector),
               weight = 0.6,
               opacity = 0.7,
@@ -1145,7 +981,7 @@ leaflet(st_zm(sectores_prox)) %>%
               fillOpacity = 0.4,
               group = "Isocronas Sector 3") %>% 
   
-    addPolygons(data= isocronas05_sp %>% filter(sector=="4"),
+    addPolygons(data= isocronas05_tot %>% filter(sector=="4"),
               color = ~pal(sector),
               weight = 0.6,
               opacity = 0.7,
@@ -1162,7 +998,7 @@ leaflet(st_zm(sectores_prox)) %>%
               group = "Sectores Proximos") %>% 
   
 
-  addCircleMarkers(data=puntos_aleatorios_sp,
+  addCircleMarkers(data=puntos_aleatorios_tot,
               fillColor = "black",
               weight = 0.5,
               color = "black",
@@ -1174,12 +1010,14 @@ leaflet(st_zm(sectores_prox)) %>%
   
   addCircleMarkers(data = comercios_tot,
               fillColor = "#f6b26b",
-              weight = 1,
+              weight = 2,
               color = "#f6b26b",
               fillOpacity = 1,
               radius = 2,
-              popup = ~paste("<strong>ID:</strong>", id_comercio, "</br> <strong>RUBRO:</strong>", rubro, "</br><strong>CADENA:</strong>", cadena ),
-              group = "Comercios Tot")
+              popup = ~paste("<strong>ID:</strong>", id_comercio, "</br> <strong>RUBRO:</strong>", rubro, "</br><strong>CADENA:</strong>", cadena, "</br><strong>RELEVADO:</strong>", relevado, "</br><strong>DIRECCION:</strong>", id_direcciones ),
+              group = "Comercios")
+
+
  
 mapa
 
@@ -1220,9 +1058,10 @@ productos_sp = comercios_sp %>%
   ) %>% 
   mutate(
     producto_id = paste(producto, id_comercio, sep = "_"),
-    precio = round(precio, digits=2)
+    precio = round(precio, digits=2),
+    formal = 1
   ) %>% 
-  select(producto_id,producto, precio, id_comercio, rubro, cadena, tanda, geometry) %>% 
+  select(producto_id,producto, precio, id_comercio, rubro, cadena, tanda,formal, geometry) %>% 
   filter(!is.na(precio)) # saca los NA (combos donde ese local no tiene ese producto
 
 #BM----------------------------------------------------------------------
@@ -1236,28 +1075,27 @@ productos_bm = comercios_bm %>%
   ) %>% 
   mutate(
     producto_id = paste(producto, id_comercio, sep = "_"),
-    precio = round(precio, digits=2)
+    precio = round(precio, digits=2),
+    formal = 0
   ) %>% 
-  select(producto_id,producto, precio, id_comercio, rubro, cadena, tanda, geometry) %>% 
-  filter(!is.na(precio)) # saca los NA (combos donde ese local no tiene ese producto
+  select(producto_id,producto, precio, id_comercio, rubro, cadena, tanda, formal, geometry) %>% 
+  filter(!is.na(precio))  # saca los NA (combos donde ese local no tiene ese producto)
+
+#TOT----------------------------------------------------------------------
+
+productos_tot = rbind(productos_bm,productos_sp)
 ```
 
 #CANASTAS MIN Y MAX POR PUNTO
 
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
-#FILTRO LOS PRODUCTOS/COMERCIOS QUE QUEDAN DENTRO DE CADA ISOCRONA
-
-#SP_05--------------------------------------------------------------------------------
-comercios_en_isocrona05_sp = st_join(
-  productos_sp,    # puntos (comercios)
-  isocronas05_sp,         # polígonos (uno por habitante)
-  join = st_within
-)
 
 #DEFINO UNA FUNCION PARA CALCULAR CANASTAS MINIMAS Y MAXIMAS DISPONIBLES POR PUNTO
 calcular_canasta = function(df, tipo = c("min", "max")) {
   tipo = match.arg(tipo)
   slice_fn = if (tipo == "min") slice_min else slice_max
+  
+  todos_productos <- c("leche", "harina", "azucar", "arroz", "papa", "fiambre_jc", "carne_pic")
   
   df %>%
     st_drop_geometry() %>% 
@@ -1271,89 +1109,348 @@ calcular_canasta = function(df, tipo = c("min", "max")) {
       n_productos_cubiertos    = n(),
       n_locales_necesarios     = n_distinct(id_comercio),
       productos_faltantes      = 7 - n(),
+      prod_faltante            = {
+        presentes <- unique(producto)
+        faltantes <- setdiff(todos_productos, presentes)
+        if (length(faltantes) == 0) NA_character_ else paste(faltantes, collapse = ", ")},
       .groups = "drop"
     )
 }
 
-#CALCULO CUAL ES LA CANASTA MÁS ECONÓMICA QUE SE PUEDE CONSEGUIR COMPRAR DESDE CADA PUNTO ALEATORIO
+#DEFINO UNA FUNCION PARA CALULAR MARGENES ENTRE CANASTAS P5 Y P95 PARA EVITAR OUTLIERS
 
-resumen_canasta_min <- calcular_canasta(comercios_en_isocrona05_sp, "min")
-resumen_canasta_max <- calcular_canasta(comercios_en_isocrona05_sp, "max")
+calcular_margen_canasta = function(df) {
+  df %>%
+    st_drop_geometry() %>%
+    filter(!is.na(id_punto), !is.na(precio)) %>%
+    group_by(id_punto, producto) %>%
+    summarise(
+      p5  = quantile(precio, 0.05),
+      p95 = quantile(precio, 0.95),
+      n_locales = n_distinct(id_comercio),
+      .groups = "drop"
+    ) %>%
+    group_by(id_punto) %>%
+    summarise(
+      # Canasta mínima
+      canasta_sum_min  = sum(p5,  na.rm = TRUE),
+      canasta_gm_min   = exp(mean(log(p5),  na.rm = TRUE)),
+      # Canasta máxima
+      canasta_sum_max  = sum(p95, na.rm = TRUE),
+      canasta_gm_max   = exp(mean(log(p95), na.rm = TRUE)),
+      n_productos      = n(),
+      productos_faltantes = 7 - n(),
+      .groups = "drop"
+    ) %>%
+    mutate(
+      # Brecha absoluta
+      margen_sum     = canasta_sum_max - canasta_sum_min, 
+      # Brecha relativa (% sobre el mínimo)
+      margen_sum_pct = margen_sum / canasta_sum_min,
+      # Brecha geométrica
+      margen_gm_pct  = canasta_gm_max / canasta_gm_min - 1,
+      margen_log     = log(canasta_gm_max) - log(canasta_gm_min),
+      formal         = ifelse(str_starts(id_punto, "0"), 0, 1)
+    )
+}
 
-#HAGO UN RESUMEN POR PUNTO: Cuanto sale la canasta más barata, Cuantos productos cubre, A cuántos lugares distintos tengo que ir para conseguirla?
-resumen_canasta05_sp <- left_join(resumen_canasta_min, 
-                                  resumen_canasta_max %>% select(id_punto, precio_canasta_max),
-                                by = "id_punto") %>% 
-  mutate(dif_precio = precio_canasta_max - precio_canasta_min)
 
-resumen_canasta05_sp = puntos_aleatorios_sp %>% 
-  select(id_punto)%>%
-  left_join(resumen_canasta05_sp, by = "id_punto")
-#SP_10------------------------------------------------------
 
-comercios_en_isocrona10_sp = st_join(
-  productos_sp,    # puntos (comercios)
-  isocronas10_sp,         # polígonos (uno por habitante)
+#TOT_05--------------------------------------------------------------------------------
+
+#FILTRO LOS PRODUCTOS/COMERCIOS QUE QUEDAN DENTRO DE CADA ISOCRONA
+comercios_en_isocrona05_tot = st_join(
+  productos_tot,    # puntos (comercios)
+  isocronas05_tot,         # polígonos (uno por habitante)
   join = st_within
 )
 
-#CALCULO CUAL ES LA CANASTA MÁS ECONÓMICA QUE SE PUEDE CONSEGUIR COMPRAR DESDE CADA PUNTO ALEATORIO
-resumen_canasta_min <- calcular_canasta(comercios_en_isocrona10_sp, "min")
-resumen_canasta_max <- calcular_canasta(comercios_en_isocrona10_sp, "max")
+#CALCULO PARA ISOCRONAS DE 5MIN
+
+resumen_canasta_min <- calcular_canasta(comercios_en_isocrona05_tot, "min")
+resumen_canasta_max <- calcular_canasta(comercios_en_isocrona05_tot, "max")
+margen_canastas <- calcular_margen_canasta(comercios_en_isocrona05_tot)
 
 #HAGO UN RESUMEN POR PUNTO: Cuanto sale la canasta más barata, Cuantos productos cubre, A cuántos lugares distintos tengo que ir para conseguirla?
-resumen_canasta10_sp <- left_join(resumen_canasta_min, 
+resumen_canasta05_tot = left_join(resumen_canasta_min, 
+                                  resumen_canasta_max %>% 
+                                   select(id_punto, precio_canasta_max),
+                                by = "id_punto")
+
+resumen_canasta05_tot = left_join(margen_canastas,resumen_canasta05_tot%>% 
+                                    select(-productos_faltantes),
+                                           by="id_punto")
+
+resumen_canasta05_tot = puntos_aleatorios_tot %>% 
+  select(id_punto)%>%
+  left_join(resumen_canasta05_tot, by = "id_punto")
+
+#TOT_10------------------------------------------------------
+
+#FILTRO LOS PRODUCTOS/COMERCIOS QUE QUEDAN DENTRO DE CADA ISOCRONA
+comercios_en_isocrona10_tot = st_join(
+  productos_tot,    # puntos (comercios)
+  isocronas10_tot,         # polígonos (uno por habitante)
+  join = st_within
+)
+
+#CALCULO PARA ISOCRONAS DE 10MIN
+
+resumen_canasta_min <- calcular_canasta(comercios_en_isocrona10_tot, "min")
+resumen_canasta_max <- calcular_canasta(comercios_en_isocrona10_tot, "max")
+margen_canastas <- calcular_margen_canasta(comercios_en_isocrona10_tot)
+
+#HAGO UN RESUMEN POR PUNTO: Cuanto sale la canasta más barata, Cuantos productos cubre, A cuántos lugares distintos tengo que ir para conseguirla?
+resumen_canasta10_tot <- left_join(resumen_canasta_min, 
                                 resumen_canasta_max %>% select(id_punto, precio_canasta_max),
-                                by = "id_punto") %>% 
-  mutate(dif_precio = precio_canasta_max - precio_canasta_min)
+                                by = "id_punto")
 
-resumen_canasta10_sp = puntos_aleatorios_sp %>% 
+resumen_canasta10_tot = left_join(margen_canastas,resumen_canasta10_tot %>% 
+                                    select(-productos_faltantes), by="id_punto")
+
+resumen_canasta10_tot = puntos_aleatorios_tot %>% 
   select(id_punto)%>%
-  left_join(resumen_canasta10_sp, by = "id_punto")
+  left_join(resumen_canasta10_tot, by = "id_punto")
 
-#BM_05---------------------------------------------------------------------------------
 
-comercios_en_isocrona05_bm = st_join(
-  productos_bm,    # puntos (comercios)
-  isocronas05_bm,         # polígonos (uno por habitante)
-  join = st_within
-)
-
-resumen_canasta_min <- calcular_canasta(comercios_en_isocrona05_bm, "min")
-resumen_canasta_max <- calcular_canasta(comercios_en_isocrona05_bm, "max")
-
-#HAGO UN RESUMEN POR PUNTO: Cuanto sale la canasta más barata, Cuantos productos cubre, A cuántos lugares distintos tengo que ir para conseguirla?
-resumen_canasta05_bm <- left_join(resumen_canasta_min, 
-                                  resumen_canasta_max %>% select(id_punto, precio_canasta_max),
-                                by = "id_punto") %>% 
-  mutate(dif_precio = precio_canasta_max - precio_canasta_min)
-
-resumen_canasta05_bm = puntos_aleatorios_bm %>% 
-  select(id_punto)%>%
-  left_join(resumen_canasta05_bm, by = "id_punto")
-#BM_10---------------------------------------------------
-
-comercios_en_isocrona10_bm = st_join(
-  productos_bm,    # puntos (comercios)
-  isocronas10_bm,         # polígonos (uno por habitante)
-  join = st_within
-)
-
-resumen_canasta_min <- calcular_canasta(comercios_en_isocrona10_bm, "min")
-resumen_canasta_max <- calcular_canasta(comercios_en_isocrona10_bm, "max")
-
-#HAGO UN RESUMEN POR PUNTO: Cuanto sale la canasta más barata, Cuantos productos cubre, A cuántos lugares distintos tengo que ir para conseguirla?
-resumen_canasta10_bm <- left_join(resumen_canasta_min, 
-                                resumen_canasta_max %>% select(id_punto, precio_canasta_max),
-                                by = "id_punto") %>% 
-  mutate(dif_precio = precio_canasta_max - precio_canasta_min)
-
-resumen_canasta10_bm = puntos_aleatorios_bm %>% 
-  select(id_punto)%>%
-  left_join(resumen_canasta10_bm, by = "id_punto")
-
-rm(resumen_canasta_min, resumen_canasta_max)
+rm(resumen_canasta_min, resumen_canasta_max, margen_canastas)
 ```
+
+```{r}
+#CANASTA 05
+sumtab <- resumen_canasta05_tot %>%
+  group_by(formal) %>%
+  summarise(
+    n_iso          = n(),
+    # GM “cara”
+    mean_gm_max    = mean(canasta_gm_max, na.rm = TRUE),
+    median_gm_max  = median(canasta_gm_max, na.rm = TRUE),
+    wmean_gm_max   = weighted.mean(canasta_gm_max, n_productos, na.rm = TRUE),
+    # Brecha (log)
+    mean_head_log  = mean(margen_log, na.rm = TRUE),
+    median_headpct = median(margen_gm_pct, na.rm = TRUE),
+    .groups = "drop"
+  )
+print(sumtab)
+```
+
+```{r}
+#CANASTA 10
+sumtab <- resumen_canasta10_tot %>%
+  group_by(formal) %>%
+  summarise(
+    n_iso          = n(),
+    # GM “cara”
+    mean_gm_max    = mean(canasta_gm_max, na.rm = TRUE),
+    median_gm_max  = median(canasta_gm_max, na.rm = TRUE),
+    wmean_gm_max   = weighted.mean(canasta_gm_max, n_productos, na.rm = TRUE),
+    # Brecha (log)
+    mean_head_log  = mean(margen_log, na.rm = TRUE),
+    median_headpct = median(margen_gm_pct, na.rm = TRUE),
+    .groups = "drop"
+  )
+print(sumtab)
+```
+
+```{r}
+#CANASTA 05
+# Asegura que el grupo sea factor con niveles y etiquetas claras
+resumen_canasta05_tot <- resumen_canasta05_tot %>%
+  mutate(grupo = factor(ifelse(formal == 1, "formal", "informal"),
+                        levels = c("formal","informal")))
+
+# t-tests
+t_gmmax <- t.test(log(canasta_gm_max) ~ grupo, data = resumen_canasta05_tot)   # WTP (cola alta)
+t_head  <- t.test(margen_log       ~ grupo, data = resumen_canasta05_tot)    # brecha interna
+
+# Convierte diferencia en logs -> % y orienta a (slum - formal)
+conv_pct <- function(tt){
+  nm <- tolower(names(tt$estimate))
+  m_formal   <- unname(tt$estimate[nm == "mean in group formal"])
+  m_informal <- unname(tt$estimate[nm == "mean in group informal"])
+  diff_log <- m_informal - m_formal                 # informal − formal
+  ci_log   <- sort(-tt$conf.int)                    # pasa a (informal − formal)
+  c(
+    pct_diff = 100*(exp(diff_log) - 1),
+    ci_low   = 100*(exp(ci_log[1]) - 1),
+    ci_high  = 100*(exp(ci_log[2]) - 1),
+    p_value  = unname(tt$p.value)
+  )
+}
+
+res_gmmax <- conv_pct(t_gmmax)   # % dif en GM de canasta “cara” (slum − formal)
+res_head  <- conv_pct(t_head)    # % dif en margen (slum − formal)
+
+res_gmmax
+res_head
+
+# Robustez no paramétrica
+wil_gmmax <- wilcox.test(log(canasta_gm_max) ~ grupo, data = resumen_canasta05_tot, exact = FALSE)
+wil_head  <- wilcox.test(margen_log       ~ grupo, data = resumen_canasta05_tot, exact = FALSE)
+wil_gmmax$p.value; wil_head$p.value
+```
+```{r}
+#CANASTA 10
+# Asegura que el grupo sea factor con niveles y etiquetas claras
+resumen_canasta10_tot <- resumen_canasta10_tot %>%
+  mutate(grupo = factor(ifelse(formal == 1, "formal", "informal"),
+                        levels = c("formal","informal")))
+
+# t-tests
+t_gmmax <- t.test(log(canasta_gm_max) ~ grupo, data = resumen_canasta10_tot)   # WTP (cola alta)
+t_head  <- t.test(margen_log       ~ grupo, data = resumen_canasta10_tot)    # brecha interna
+
+# Convierte diferencia en logs -> % y orienta a (slum - formal)
+conv_pct <- function(tt){
+  nm <- tolower(names(tt$estimate))
+  m_formal   <- unname(tt$estimate[nm == "mean in group formal"])
+  m_informal <- unname(tt$estimate[nm == "mean in group informal"])
+  diff_log <- m_informal - m_formal                 # informal − formal
+  ci_log   <- sort(-tt$conf.int)                    # pasa a (informal − formal)
+  c(
+    pct_diff = 100*(exp(diff_log) - 1),
+    ci_low   = 100*(exp(ci_log[1]) - 1),
+    ci_high  = 100*(exp(ci_log[2]) - 1),
+    p_value  = unname(tt$p.value)
+  )
+}
+
+res_gmmax <- conv_pct(t_gmmax)   # % dif en GM de canasta “cara” (slum − formal)
+res_head  <- conv_pct(t_head)    # % dif en margen (slum − formal)
+
+res_gmmax
+res_head
+
+# Robustez no paramétrica
+wil_gmmax <- wilcox.test(log(canasta_gm_max) ~ grupo, data = resumen_canasta10_tot, exact = FALSE)
+wil_head  <- wilcox.test(margen_log       ~ grupo, data = resumen_canasta10_tot, exact = FALSE)
+wil_gmmax$p.value; wil_head$p.value
+```
+
+La brecha entre lo más caro disponible y lo más barato disponible es mayor en entornos informales? Esto implicaría que los habitantes informales no solo pagan más sino que tienen menos capacidad de arbitrar entre opciones.
+
+```{r}
+# CANASTA 05
+# Comparación de márgenes entre entornos formal e informal
+resumen_canasta05_tot %>%
+  st_drop_geometry() %>% 
+  group_by(formal) %>%
+  summarise(
+    # Brecha absoluta promedio
+    margen_sum_medio    = mean(margen_sum, na.rm = TRUE),
+    # Brecha relativa promedio (% sobre el mínimo)
+    margen_sum_pct_medio = mean(margen_sum_pct, na.rm = TRUE),
+    # Brecha geométrica promedio
+    margen_gm_pct_medio  = mean(margen_gm_pct, na.rm = TRUE),
+    # Canasta mínima promedio (para contextualizar)
+    canasta_min_media   = mean(canasta_sum_min, na.rm = TRUE),
+    # Canasta máxima promedio
+    canasta_max_media   = mean(canasta_sum_max, na.rm = TRUE),
+    n_puntos            = n(),
+    .groups = "drop"
+  )
+```
+
+```{r}
+# CANASTA 10
+# Comparación de márgenes entre entornos formal e informal
+resumen_canasta10_tot %>%
+  st_drop_geometry() %>% 
+  group_by(formal) %>%
+  summarise(
+    # Brecha absoluta promedio
+    margen_sum_medio    = mean(margen_sum, na.rm = TRUE),
+    # Brecha relativa promedio (% sobre el mínimo)
+    margen_sum_pct_medio = mean(margen_sum_pct, na.rm = TRUE),
+    # Brecha geométrica promedio
+    margen_gm_pct_medio  = mean(margen_gm_pct, na.rm = TRUE),
+    # Canasta mínima promedio (para contextualizar)
+    canasta_min_media   = mean(canasta_sum_min, na.rm = TRUE),
+    # Canasta máxima promedio
+    canasta_max_media   = mean(canasta_sum_max, na.rm = TRUE),
+    n_puntos            = n(),
+    .groups = "drop"
+  )
+```
+
+El indicador más relevante para mi pregunta es margen_sum_pct_medio (brecha relativa), porque la brecha absoluta puede ser mayor en entornos formales simplemente porque los precios son más altos en términos nominales. La brecha relativa me dice si proporcionalmente los informales tienen menos capacidad de encontrar opciones económicas.
+Para complementar, se realiza un test estadístico simple:
+
+```{r}
+# CANASTA 05
+# Test de diferencia de medias
+t.test(margen_sum_pct ~ formal, data = resumen_canasta05_tot)
+
+# O con Wilcoxon si la distribución no es normal
+wilcox.test(margen_sum_pct ~ formal, data = resumen_canasta05_tot)
+```
+
+```{r}
+# CANASTA 10
+# Test de diferencia de medias
+t.test(margen_sum_pct ~ formal, data = resumen_canasta10_tot)
+
+# O con Wilcoxon si la distribución no es normal
+wilcox.test(margen_sum_pct ~ formal, data = resumen_canasta10_tot)
+```
+
+Para fortalecer el argumento se normaliza el margen por el nivel de precios del entorno, para asegurar que la diferencia no sea simplemente consecuencia de que los precios absolutos son más altos o más bajos en un contexto:
+
+```{r}
+#CANASTA 05
+resumen_canasta05_tot |>
+  group_by(formal) |>
+  summarise(
+    margen_relativo_medio = mean(margen_sum_pct, na.rm = TRUE),
+    canasta_min_media     = mean(canasta_sum_min, na.rm = TRUE),
+    canasta_max_media     = mean(canasta_sum_max, na.rm = TRUE),
+    n = n()
+  )
+```
+```{r}
+#CANASTA 10
+resumen_canasta10_tot |>
+  group_by(formal) |>
+  summarise(
+    margen_relativo_medio = mean(margen_sum_pct, na.rm = TRUE),
+    canasta_min_media     = mean(canasta_sum_min, na.rm = TRUE),
+    canasta_max_media     = mean(canasta_sum_max, na.rm = TRUE),
+    n = n()
+  )
+```
+
+```{r}
+# Distribución del margen por grupo CANASTA 05
+ggplot(resumen_canasta05_tot, aes(x = factor(formal), y = margen_sum_pct, fill = factor(formal))) +
+  geom_boxplot(alpha = 0.6) +
+  geom_jitter(width = 0.1, size = 2, alpha = 0.7) +
+  scale_x_discrete(labels = c("0" = "Formal", "1" = "Informal")) +
+  scale_fill_manual(values = c("0" = "#134f5c", "1" = "#f6b26b")) +
+  labs(x = NULL, y = "Margen relativo (p95 - p5) / p5") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+```{r}
+# Distribución del margen por grupo CANASTA 10
+ggplot(resumen_canasta10_tot, aes(x = factor(formal), y = margen_sum_pct, fill = factor(formal))) +
+  geom_boxplot(alpha = 0.6) +
+  geom_jitter(width = 0.1, size = 2, alpha = 0.7) +
+  scale_x_discrete(labels = c("0" = "Formal", "1" = "Informal")) +
+  scale_fill_manual(values = c("0" = "#134f5c", "1" = "#f6b26b")) +
+  labs(x = NULL, y = "Margen relativo (p95 - p5) / p5") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+Lo que muestran los datos
+El boxplot lo dice claramente: el entorno informal tiene mayor dispersión y mayor margen relativo, con la mediana informal (~0.55) casi el doble que la formal (~0.30). Pero la caja informal es mucho más ancha, lo que explica por qué el Wilcoxon no es significativo — hay mucha varianza interna en el grupo informal.
+Sobre la discrepancia t-test vs Wilcoxon
+Mirando el gráfico, la causa es evidente: el grupo informal tiene outliers hacia arriba (valores de 2, 2.5, 3.5) que inflan la media pero no la mediana. El t-test es sensible a eso, el Wilcoxon no. Los resultados más robustos de tu análisis anterior con margen_log (donde ambos tests fueron significativos) son más confiables precisamente porque la escala logarítmica comprime esos outliers.
+
+Conclusión metodológica:
+Los resultados con margen_log (ambos tests significativos, p = 0.005 y p = 0.034) son el argumento más sólido. El margen_sum_pct en escala lineal tiene la misma dirección pero es más sensible a outliers. Es importante tener ambos en cuenta, considerando que la robustez del resultado en escala logarítmica respalda la hipótesis del impuesto a la pobreza relativo.
+
 </details>
 
 Imagen 8. Precios mínimos y máximos de sub-canastas a las que se puede acceder desde cada punto a una distancia a pie de hasta 5 minutos.
@@ -1381,7 +1478,7 @@ leaflet(st_zm(sectores_prox)) %>%
   addProviderTiles(providers$Esri.WorldImagery, group = "Satelite") %>%
   addLayersControl(
     baseGroups = c("OSM","Satelite"), 
-    overlayGroups = c("Barrio Mugica", "Oferta a 5min por punto BM", "Sectores Proximos", "Oferta a 5min por punto SP", "Comercios"))%>% 
+    overlayGroups = c("Barrio Mugica", "Oferta a 5min por punto", "Sectores Proximos", "Comercios"))%>% 
   
 
 
@@ -1410,7 +1507,7 @@ leaflet(st_zm(sectores_prox)) %>%
               group = "Comercios") %>% 
 
   
-  addCircleMarkers(data=resumen_canasta05_bm,
+  addCircleMarkers(data=resumen_canasta05_tot,
               fillColor = "black",
               weight = 4,
               color = "black",
@@ -1418,27 +1515,12 @@ leaflet(st_zm(sectores_prox)) %>%
               popup = ~paste("<strong>ID Punto:</strong>", id_punto,
                              "</br> <strong>Sub-canasta Min:</strong>", precio_canasta_min,
                              "</br> <strong>Sub-canasta Max:</strong>", precio_canasta_max,
-                             "</br> <strong>Sub-canasta Dif:</strong>", dif_precio,
                              "</br> <strong>Productos Cubiertos:</strong>", n_productos_cubiertos,
                              "</br> <strong>Productos Faltantes:</strong>", productos_faltantes,
                              "</br> <strong>N Locales:</strong>", n_locales_necesarios),
               radius = 2,
-              group = "Oferta a 5min por punto BM") %>%
-  
-  addCircleMarkers(data=resumen_canasta05_sp,
-              fillColor = "black",
-              weight = 4,
-              color = "black",
-              fillOpacity = 0.5,
-              popup = ~paste("<strong>ID Punto:</strong>", id_punto,
-                             "</br> <strong>Sub-canasta Min:</strong>", precio_canasta_min,
-                             "</br> <strong>Sub-canasta Max:</strong>", precio_canasta_max,
-                             "</br> <strong>Sub-canasta Dif:</strong>", dif_precio,
-                             "</br> <strong>Productos Cubiertos:</strong>", n_productos_cubiertos,
-                             "</br> <strong>Productos Faltantes:</strong>", productos_faltantes,
-                             "</br> <strong>N Locales:</strong>", n_locales_necesarios),
-              radius = 2,
-              group = "Oferta a 5min por punto SP")
+              group = "Oferta a 5min por punto")
+
  
 mapa
 
@@ -1464,7 +1546,7 @@ leaflet(st_zm(sectores_prox)) %>%
   addProviderTiles(providers$Esri.WorldImagery, group = "Satelite") %>%
   addLayersControl(
     baseGroups = c("OSM","Satelite"), 
-    overlayGroups = c("Barrio Mugica", "Oferta a 10min por punto BM", "Sectores Proximos", "Oferta a 10min por punto SP", "Comercios"))%>% 
+    overlayGroups = c("Barrio Mugica", "Oferta a 10min por punto", "Sectores Proximos", "Comercios"))%>% 
   
 
 
@@ -1493,7 +1575,7 @@ leaflet(st_zm(sectores_prox)) %>%
               group = "Comercios") %>% 
 
   
-  addCircleMarkers(data=resumen_canasta10_bm,
+  addCircleMarkers(data=resumen_canasta10_tot,
               fillColor = "black",
               weight = 4,
               color = "black",
@@ -1501,27 +1583,11 @@ leaflet(st_zm(sectores_prox)) %>%
               popup = ~paste("<strong>ID Punto:</strong>", id_punto,
                              "</br> <strong>Sub-canasta Min:</strong>", precio_canasta_min,
                              "</br> <strong>Sub-canasta Max:</strong>", precio_canasta_max,
-                             "</br> <strong>Sub-canasta Dif:</strong>", dif_precio,
                              "</br> <strong>Productos Cubiertos:</strong>", n_productos_cubiertos,
                              "</br> <strong>Productos Faltantes:</strong>", productos_faltantes,
                              "</br> <strong>N Locales:</strong>", n_locales_necesarios),
               radius = 2,
-              group = "Oferta a 10min por punto BM") %>%
-  
-  addCircleMarkers(data=resumen_canasta10_sp,
-              fillColor = "black",
-              weight = 4,
-              color = "black",
-              fillOpacity = 0.5,
-              popup = ~paste("<strong>ID Punto:</strong>", id_punto,
-                             "</br> <strong>Sub-canasta Min:</strong>", precio_canasta_min,
-                             "</br> <strong>Sub-canasta Max:</strong>", precio_canasta_max,
-                             "</br> <strong>Sub-canasta Dif:</strong>", dif_precio,
-                             "</br> <strong>Productos Cubiertos:</strong>", n_productos_cubiertos,
-                             "</br> <strong>Productos Faltantes:</strong>", productos_faltantes,
-                             "</br> <strong>N Locales:</strong>", n_locales_necesarios),
-              radius = 2,
-              group = "Oferta a 10min por punto SP")
+              group = "Oferta a 10min por punto") 
  
 mapa
 
@@ -1959,12 +2025,12 @@ delitos_caba = delitos %>%
   st_transform(22185)
 
   
-delitos_sp = st_intersection(delitos_caba, isocronas15_sp) %>% 
+delitos_sp = st_intersection(delitos_caba, isocronas10_sp) %>% 
   clean_names() %>% 
   mutate(tipo = as.factor(tipo))
 
 
-delitos_bm = st_intersection(delitos_caba,isocronas15_bm)%>% 
+delitos_bm = st_intersection(delitos_caba,isocronas10_bm)%>% 
   clean_names()%>% 
   mutate(tipo = as.factor(tipo))
 
