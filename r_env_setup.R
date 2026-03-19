@@ -7,7 +7,8 @@
 if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
 if (!file.exists("renv.lock")) renv::init()
 
-paquetes=(c("bootstrap",
+paquetes=(c("areal",
+            "bootstrap",
             "bslib",
             "data.table",
             "distill",
@@ -42,7 +43,7 @@ paquetes=(c("bootstrap",
             "sodium",
             "sp",
             "stringr",
-            "tidyencoder",
+            #"tidyencoder",
             "tidyr",
             "tidyverse",
             "viridis",

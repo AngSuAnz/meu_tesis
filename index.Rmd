@@ -8,6 +8,7 @@ description: |
 ```{r librerias, include=FALSE}
 options(scipen = 999)
 
+library(areal)
 library(distill)
 library(dplyr)
 library(DT)
@@ -1058,12 +1059,12 @@ comercios_long <- comercios_iso_sum %>%
   pivot_longer(
     cols = c('Comercios cadena', 'Comercios no cadena'),
     names_to = "cadena",
-    values_to = "n_comercios"          # comillas, no backticks
+    values_to = "n_comercios"          
   ) %>%
   mutate(
     `Nombre Sector` = as.factor(`Nombre Sector`),
     cadena = recode(cadena,
-                    "Comercios cadena"    = "Cadena",      # debe coincidir exacto
+                    "Comercios cadena"    = "Cadena",      
                     "Comercios no cadena" = "No cadena")
   )
 ```
@@ -1187,6 +1188,80 @@ ggplot(comercios_long, aes(x = n_comercios, y = `Nombre Sector`, fill = cadena))
   )
 ```
 
+<details><summary> Código </summary>
+# NBI
+```{r}
+censo2010 = st_read("data/informacion_censal_por_radio_2010_wgs84.geojson") %>% 
+  st_transform(22185)%>% 
+  st_make_valid() %>% 
+  clean_names() %>% 
+  mutate(hogares_con_nbi_pct = as.numeric(h_con_nbi)/as.numeric(t_hogar),
+         t_hogar = as.numeric(t_hogar))
+
+
+# Interpolación areal ponderada por área
+radios_2022_con_nbi = aw_interpolate(
+  .data      = radios_tot,
+  tid        = cod_indec,
+  source     = censo2010,
+  sid        = id,
+  weight     = "sum",
+  output     = "sf",
+  intensive  = "hogares_con_nbi_pct",
+  extensive  = "t_hogar"
+)
+
+nbi_sector = radios_2022_con_nbi %>%
+  st_drop_geometry() %>%
+  group_by(sector) %>%
+  summarise(
+    nbi_pct = round(weighted.mean(hogares_con_nbi_pct, w = t_hogar, na.rm = TRUE),digits = 4)
+  ) %>% 
+  mutate(sector_formal = if_else(sector == "0", "Barrio Mugica", paste0("Sector Próximo ", sector)))
+
+rm(censo2010,radios_2022_con_nbi)
+```
+</details>
+
+```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
+tabla = datatable(
+  nbi_sector %>% 
+    select(sector_formal,nbi_pct) %>% 
+    rename("Nombre Sector" = sector_formal,
+           "NBI Porcentual" = nbi_pct), 
+  style = 'bootstrap', 
+  class = 'cell-border stripe',
+  options = list(
+    searching = FALSE,
+    rownames = FALSE,
+    pageLength = -1,
+    dom = 't',
+    scrollY = '300px',
+    language = list(zeroRecords = "No existen datos para los requerimientos seleccionados"),
+    columnDefs = list(
+      list(targets = 0, visible = FALSE),
+      list(targets = c(1,2), width = '150px', className = 'dt-left')
+    )
+  )
+)
+
+tabla
+```
+
+
+
+<small style="color: #a64d79;"> [Se utilizó el NBI del Censo 2010 como indicador de privación estructural histórica del área, dado que el Censo 2022 no publicó aún datos de NBI desagregados a nivel de radio censal. Dado que la segregación urbana en CABA muestra alta persistencia temporal, especialmente en asentamientos informales consolidados, se asume que el NBI 2010 refleja adecuadamente las condiciones estructurales del área de estudio.
+  Si el NBI 2010 ya mostraba una brecha estructural pronunciada, y la evidencia sugiere que la pandemia profundizó la desigualdad urbana en Argentina, el uso del NBI 2010 representa una estimación conservadora de la privación actual del sector informal.
+  Fuentes para justificar: 
+    * La crisis económica asociada a la emergencia sanitaria impactó particularmente en los barrios informales, en los que los índices de informalidad laboral y cuentapropismo son generalmente más altos, lo que profundiza las dificultades vinculadas al confinamiento prolongado. INDEC
+https://www.cippec.org/publicacion/covid-barrio-mugica-evaluacion-impacto/
+    * Según el ODSA, luego de la crisis económico-sanitaria, en plena recuperación económica de 2022, el porcentaje de población en situación de pobreza ya había alcanzado el 40%, lo que en lo que va del siglo XXI representa un crecimiento de al menos 15 puntos porcentuales. Indec
+El informe completo está acá:
+https://wadmin.uca.edu.ar/public/ckeditor/Observatorio%20Deuda%20Social/Documentos/2022/2022-OBSERVATORIO-RESUMEN-Deudas-Sociales-en-la-Argentina-Urbana-2010-2022_Anexo-PRENSA.pdf
+    * La CEPAL estimó que la pobreza en Argentina trepó a 38,8% en 2020 como consecuencia de la pandemia, representando un retroceso de 12 años en términos de pobreza. INDEC
+El informe de referencia es el Panorama Social de América Latina 2020:
+https://www.cepal.org/es/comunicados/pandemia-provoca-aumento-niveles-pobreza-sin-precedentes-ultimas-decadas-impacta] </small>
+
 <h2>
   SUB-CANASTA </br>
   <small class="text-muted"> |  Productos relevados por establecimiento </small>
@@ -1210,9 +1285,7 @@ Los relevamientos se realizaron siguiendo las preguntas del <em>Anexo I - Formul
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 #TRANSFORMO LA BASE DE COMERCIOS EN BASE DE PRODUCTOS DESGLOSADOS.
 
-#SP-------------------------------------------------------------------
-
-productos_sp = comercios_sp %>% 
+productos_tot = comercios_tot %>% 
   select(id_comercio,rubro,leche,harina,azucar,arroz,papa,fiambre_jc,carne_pic,cadena,tanda) %>%  
   pivot_longer(
     cols = c(leche, harina, azucar, arroz, papa, fiambre_jc, carne_pic),
@@ -1222,32 +1295,33 @@ productos_sp = comercios_sp %>%
   mutate(
     producto_id = paste(producto, id_comercio, sep = "_"),
     precio = round(precio, digits=2),
-    formal = 1
+    formal = as.factor(if_else(grepl("cbm",id_comercio),0,1))
   ) %>% 
   select(producto_id,producto, precio, id_comercio, rubro, cadena, tanda,formal, geometry) %>% 
   filter(!is.na(precio)) # saca los NA (combos donde ese local no tiene ese producto
 
-#BM----------------------------------------------------------------------
-
-productos_bm = comercios_bm %>% 
-  select(sector_bm,id_comercio,id_direcciones,rubro,leche,harina,azucar,arroz,papa,fiambre_jc,carne_pic,cadena,tanda) %>%  
-  pivot_longer(
-    cols = c(leche, harina, azucar, arroz, papa, fiambre_jc, carne_pic),
-    names_to  = "producto",
-    values_to = "precio"
-  ) %>% 
-  mutate(
-    producto_id = paste(producto, id_comercio, sep = "_"),
-    precio = round(precio, digits=2),
-    formal = 0
-  ) %>% 
-  select(producto_id,producto, precio, id_comercio, rubro, cadena, tanda, formal, geometry) %>% 
-  filter(!is.na(precio))  # saca los NA (combos donde ese local no tiene ese producto)
-
-#TOT----------------------------------------------------------------------
-
-productos_tot = rbind(productos_bm,productos_sp)
 ```
+</details>
+
+
+
+```{r, echo=FALSE, out.width='75%', fig.align='left', out.height=600}
+
+ggplot(productos_tot, aes(x = precio, y = producto, fill = formal)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.8) +
+  scale_fill_brewer(palette = "Accent") +
+  labs(x = "Precios", y = "Producto", fill = "Sector Formal") +
+  theme_minimal(base_size = 14) +
+  theme_minimal(base_size = 14) +
+  scale_x_continuous(limits = c(0, 22000), breaks = seq(0, 22000, by = 2000))+
+  theme(
+    legend.position = "bottom",
+    plot.title = element_blank(),
+    axis.text.y = element_text(size = 10)
+  )
+```
+
+<details><summary> Código </summary>
 
 #CANASTAS MIN Y MAX POR PUNTO
 
@@ -1262,16 +1336,14 @@ calcular_canasta = function(df, tipo = c("min", "max")) {
   
   df %>%
     st_drop_geometry() %>% 
-    filter(!is.na(id_punto), !is.na(precio)) %>%
+    filter(!is.na(id_punto)) %>%
     group_by(id_punto, producto) %>%
     slice_fn(precio, n = 1, with_ties = FALSE) %>%
     ungroup() %>%
     group_by(id_punto) %>%
     summarise(
       "precio_canasta_{tipo}" := sum(precio),
-      n_productos_cubiertos    = n(),
       n_locales_necesarios     = n_distinct(id_comercio),
-      productos_faltantes      = 7 - n(),
       prod_faltante            = {
         presentes <- unique(producto)
         faltantes <- setdiff(todos_productos, presentes)
@@ -1285,7 +1357,7 @@ calcular_canasta = function(df, tipo = c("min", "max")) {
 calcular_margen_canasta = function(df) {
   df %>%
     st_drop_geometry() %>%
-    filter(!is.na(id_punto), !is.na(precio)) %>%
+    filter(!is.na(id_punto)) %>%
     group_by(id_punto, producto) %>%
     summarise(
       p5  = quantile(precio, 0.05),
@@ -1295,24 +1367,25 @@ calcular_margen_canasta = function(df) {
     ) %>%
     group_by(id_punto) %>%
     summarise(
-      # Canasta mínima
-      canasta_sum_min  = sum(p5,  na.rm = TRUE),
-      canasta_gm_min   = exp(mean(log(p5),  na.rm = TRUE)),
-      # Canasta máxima
-      canasta_sum_max  = sum(p95, na.rm = TRUE),
-      canasta_gm_max   = exp(mean(log(p95), na.rm = TRUE)),
+      # Minimos en p5
+      canasta_sum_p5  = sum(p5,  na.rm = TRUE), 
+      canasta_gm_p5   = exp(mean(log(p5),  na.rm = TRUE)), 
+      # Máximos en p95
+      canasta_sum_p95  = sum(p95, na.rm = TRUE),
+      canasta_gm_p95   = exp(mean(log(p95), na.rm = TRUE)),
       n_productos      = n(),
       productos_faltantes = 7 - n(),
       .groups = "drop"
     ) %>%
     mutate(
-      # Brecha absoluta
-      margen_sum     = canasta_sum_max - canasta_sum_min, 
-      # Brecha relativa (% sobre el mínimo)
-      margen_sum_pct = margen_sum / canasta_sum_min,
-      # Brecha geométrica
-      margen_gm_pct  = canasta_gm_max / canasta_gm_min - 1,
-      margen_log     = log(canasta_gm_max) - log(canasta_gm_min),
+      # diferencia absoluta:
+      margen_absoluto_p     = canasta_sum_p95 - canasta_sum_p5, 
+      # diferencia relativa (%) margen como proporción del mínimo:
+      margen_relativo_pct_p = margen_absoluto_p / canasta_sum_p5,
+      # brecha geométrica (%) igual que arriba, pero usando media geométrica:
+      margen_gm_pct_p  = canasta_gm_p95 / canasta_gm_p5 - 1,
+      # logaritmo de la razón entre p5 y p95 (útil para modelar):
+      margen_log_p     = log(canasta_gm_p95) - log(canasta_gm_p5),
       formal         = ifelse(str_starts(id_punto, "0"), 0, 1)
     )
 }
@@ -1340,13 +1413,14 @@ resumen_canasta05_tot = left_join(resumen_canasta_min,
                                    select(id_punto, precio_canasta_max),
                                 by = "id_punto")
 
-resumen_canasta05_tot = left_join(margen_canastas,resumen_canasta05_tot%>% 
-                                    select(-productos_faltantes),
+resumen_canasta05_tot = left_join(margen_canastas,resumen_canasta05_tot,
                                            by="id_punto")
 
 resumen_canasta05_tot = puntos_aleatorios_tot %>% 
   select(id_punto)%>%
-  left_join(resumen_canasta05_tot, by = "id_punto")
+  left_join(resumen_canasta05_tot, by = "id_punto")%>% 
+  mutate(margen_absoluto = precio_canasta_max-precio_canasta_min)
+
 
 #TOT_10------------------------------------------------------
 
@@ -1366,32 +1440,34 @@ margen_canastas <- calcular_margen_canasta(comercios_en_isocrona10_tot)
 #HAGO UN RESUMEN POR PUNTO: Cuanto sale la canasta más barata, Cuantos productos cubre, A cuántos lugares distintos tengo que ir para conseguirla?
 resumen_canasta10_tot <- left_join(resumen_canasta_min, 
                                 resumen_canasta_max %>% select(id_punto, precio_canasta_max),
-                                by = "id_punto")
+                                by = "id_punto") 
 
-resumen_canasta10_tot = left_join(margen_canastas,resumen_canasta10_tot %>% 
-                                    select(-productos_faltantes), by="id_punto")
+resumen_canasta10_tot = left_join(margen_canastas,resumen_canasta10_tot, by="id_punto")
 
 resumen_canasta10_tot = puntos_aleatorios_tot %>% 
   select(id_punto)%>%
-  left_join(resumen_canasta10_tot, by = "id_punto")
+  left_join(resumen_canasta10_tot, by = "id_punto")%>% 
+  mutate(margen_absoluto = precio_canasta_max-precio_canasta_min)
 
 
 rm(resumen_canasta_min, resumen_canasta_max, margen_canastas)
 ```
 
+
 ```{r}
 #CANASTA 05
 sumtab <- resumen_canasta05_tot %>%
+  filter(productos_faltantes==0) %>% 
   group_by(formal) %>%
   summarise(
-    n_iso          = n(),
+    n_obs          = n(),
     # GM “cara”
-    mean_gm_max    = mean(canasta_gm_max, na.rm = TRUE),
-    median_gm_max  = median(canasta_gm_max, na.rm = TRUE),
-    wmean_gm_max   = weighted.mean(canasta_gm_max, n_productos, na.rm = TRUE),
+    mean_gm_p95    = mean(canasta_gm_p95, na.rm = TRUE),
+    median_gm_p95  = median(canasta_gm_p95, na.rm = TRUE),
+    wmean_gm_p95   = weighted.mean(canasta_gm_p95, n_productos, na.rm = TRUE),
     # Brecha (log)
-    mean_head_log  = mean(margen_log, na.rm = TRUE),
-    median_headpct = median(margen_gm_pct, na.rm = TRUE),
+    mean_head_log  = mean(margen_log_p, na.rm = TRUE),
+    median_headpct = median(margen_gm_pct_p, na.rm = TRUE),
     .groups = "drop"
   )
 print(sumtab)
@@ -1402,14 +1478,14 @@ print(sumtab)
 sumtab <- resumen_canasta10_tot %>%
   group_by(formal) %>%
   summarise(
-    n_iso          = n(),
+    n_obs          = n(),
     # GM “cara”
-    mean_gm_max    = mean(canasta_gm_max, na.rm = TRUE),
-    median_gm_max  = median(canasta_gm_max, na.rm = TRUE),
-    wmean_gm_max   = weighted.mean(canasta_gm_max, n_productos, na.rm = TRUE),
+    mean_gm_p95    = mean(canasta_gm_p95, na.rm = TRUE),
+    median_gm_p95  = median(canasta_gm_p95, na.rm = TRUE),
+    wmean_gm_p95   = weighted.mean(canasta_gm_p95, n_productos, na.rm = TRUE),
     # Brecha (log)
-    mean_head_log  = mean(margen_log, na.rm = TRUE),
-    median_headpct = median(margen_gm_pct, na.rm = TRUE),
+    mean_head_log  = mean(margen_log_p, na.rm = TRUE),
+    median_headpct = median(margen_gm_pct_p, na.rm = TRUE),
     .groups = "drop"
   )
 print(sumtab)
@@ -1423,8 +1499,8 @@ resumen_canasta05_tot <- resumen_canasta05_tot %>%
                         levels = c("formal","informal")))
 
 # t-tests
-t_gmmax <- t.test(log(canasta_gm_max) ~ grupo, data = resumen_canasta05_tot)   # WTP (cola alta)
-t_head  <- t.test(margen_log       ~ grupo, data = resumen_canasta05_tot)    # brecha interna
+t_gmmax <- t.test(log(canasta_gm_p95) ~ grupo, data = resumen_canasta05_tot)   # WTP (cola alta)
+t_head  <- t.test(margen_log_p       ~ grupo, data = resumen_canasta05_tot)    # brecha interna
 
 # Convierte diferencia en logs -> % y orienta a (slum - formal)
 conv_pct <- function(tt){
@@ -1448,8 +1524,8 @@ res_gmmax
 res_head
 
 # Robustez no paramétrica
-wil_gmmax <- wilcox.test(log(canasta_gm_max) ~ grupo, data = resumen_canasta05_tot, exact = FALSE)
-wil_head  <- wilcox.test(margen_log       ~ grupo, data = resumen_canasta05_tot, exact = FALSE)
+wil_gmmax <- wilcox.test(log(canasta_gm_p95) ~ grupo, data = resumen_canasta05_tot, exact = FALSE)
+wil_head  <- wilcox.test(margen_log_p       ~ grupo, data = resumen_canasta05_tot, exact = FALSE)
 wil_gmmax$p.value; wil_head$p.value
 ```
 ```{r}
@@ -1460,8 +1536,8 @@ resumen_canasta10_tot <- resumen_canasta10_tot %>%
                         levels = c("formal","informal")))
 
 # t-tests
-t_gmmax <- t.test(log(canasta_gm_max) ~ grupo, data = resumen_canasta10_tot)   # WTP (cola alta)
-t_head  <- t.test(margen_log       ~ grupo, data = resumen_canasta10_tot)    # brecha interna
+t_gmmax <- t.test(log(canasta_gm_p95) ~ grupo, data = resumen_canasta10_tot)   # WTP (cola alta)
+t_head  <- t.test(margen_log_p       ~ grupo, data = resumen_canasta10_tot)    # brecha interna
 
 # Convierte diferencia en logs -> % y orienta a (slum - formal)
 conv_pct <- function(tt){
@@ -1485,8 +1561,8 @@ res_gmmax
 res_head
 
 # Robustez no paramétrica
-wil_gmmax <- wilcox.test(log(canasta_gm_max) ~ grupo, data = resumen_canasta10_tot, exact = FALSE)
-wil_head  <- wilcox.test(margen_log       ~ grupo, data = resumen_canasta10_tot, exact = FALSE)
+wil_gmmax <- wilcox.test(log(canasta_gm_p95) ~ grupo, data = resumen_canasta10_tot, exact = FALSE)
+wil_head  <- wilcox.test(margen_log_p       ~ grupo, data = resumen_canasta10_tot, exact = FALSE)
 wil_gmmax$p.value; wil_head$p.value
 ```
 
@@ -1500,15 +1576,15 @@ resumen_canasta05_tot %>%
   group_by(formal) %>%
   summarise(
     # Brecha absoluta promedio
-    margen_sum_medio    = mean(margen_sum, na.rm = TRUE),
+    margen_sum_medio    = mean(margen_absoluto_p, na.rm = TRUE),
     # Brecha relativa promedio (% sobre el mínimo)
-    margen_sum_pct_medio = mean(margen_sum_pct, na.rm = TRUE),
+    margen_sum_pct_medio = mean(margen_relativo_pct_p, na.rm = TRUE),
     # Brecha geométrica promedio
-    margen_gm_pct_medio  = mean(margen_gm_pct, na.rm = TRUE),
+    margen_gm_pct_medio  = mean(margen_relativo_pct_p, na.rm = TRUE),
     # Canasta mínima promedio (para contextualizar)
-    canasta_min_media   = mean(canasta_sum_min, na.rm = TRUE),
+    canasta_min_media   = mean(canasta_sum_p5, na.rm = TRUE),
     # Canasta máxima promedio
-    canasta_max_media   = mean(canasta_sum_max, na.rm = TRUE),
+    canasta_max_media   = mean(canasta_sum_p95, na.rm = TRUE),
     n_puntos            = n(),
     .groups = "drop"
   )
@@ -1522,15 +1598,15 @@ resumen_canasta10_tot %>%
   group_by(formal) %>%
   summarise(
     # Brecha absoluta promedio
-    margen_sum_medio    = mean(margen_sum, na.rm = TRUE),
+    margen_sum_medio    = mean(margen_absoluto_p, na.rm = TRUE),
     # Brecha relativa promedio (% sobre el mínimo)
-    margen_sum_pct_medio = mean(margen_sum_pct, na.rm = TRUE),
+    margen_sum_pct_medio = mean(margen_relativo_pct_p, na.rm = TRUE),
     # Brecha geométrica promedio
-    margen_gm_pct_medio  = mean(margen_gm_pct, na.rm = TRUE),
+    margen_gm_pct_medio  = mean(margen_relativo_pct_p, na.rm = TRUE),
     # Canasta mínima promedio (para contextualizar)
-    canasta_min_media   = mean(canasta_sum_min, na.rm = TRUE),
+    canasta_min_media   = mean(canasta_sum_p5, na.rm = TRUE),
     # Canasta máxima promedio
-    canasta_max_media   = mean(canasta_sum_max, na.rm = TRUE),
+    canasta_max_media   = mean(canasta_sum_p95, na.rm = TRUE),
     n_puntos            = n(),
     .groups = "drop"
   )
@@ -1551,10 +1627,10 @@ wilcox.test(margen_sum_pct ~ formal, data = resumen_canasta05_tot)
 ```{r}
 # CANASTA 10
 # Test de diferencia de medias
-t.test(margen_sum_pct ~ formal, data = resumen_canasta10_tot)
+t.test(margen_relativo_pct_p ~ formal, data = resumen_canasta10_tot)
 
 # O con Wilcoxon si la distribución no es normal
-wilcox.test(margen_sum_pct ~ formal, data = resumen_canasta10_tot)
+wilcox.test(margen_relativo_pct_p ~ formal, data = resumen_canasta10_tot)
 ```
 
 Para fortalecer el argumento se normaliza el margen por el nivel de precios del entorno, para asegurar que la diferencia no sea simplemente consecuencia de que los precios absolutos son más altos o más bajos en un contexto:
@@ -1564,9 +1640,9 @@ Para fortalecer el argumento se normaliza el margen por el nivel de precios del 
 resumen_canasta05_tot |>
   group_by(formal) |>
   summarise(
-    margen_relativo_medio = mean(margen_sum_pct, na.rm = TRUE),
-    canasta_min_media     = mean(canasta_sum_min, na.rm = TRUE),
-    canasta_max_media     = mean(canasta_sum_max, na.rm = TRUE),
+    margen_relativo_medio = mean(margen_relativo_pct_p, na.rm = TRUE),
+    canasta_min_media     = mean(canasta_sum_p5, na.rm = TRUE),
+    canasta_max_media     = mean(canasta_sum_p95, na.rm = TRUE),
     n = n()
   )
 ```
@@ -1575,16 +1651,16 @@ resumen_canasta05_tot |>
 resumen_canasta10_tot |>
   group_by(formal) |>
   summarise(
-    margen_relativo_medio = mean(margen_sum_pct, na.rm = TRUE),
-    canasta_min_media     = mean(canasta_sum_min, na.rm = TRUE),
-    canasta_max_media     = mean(canasta_sum_max, na.rm = TRUE),
+    margen_relativo_medio = mean(margen_relativo_pct_p, na.rm = TRUE),
+    canasta_min_media     = mean(canasta_sum_p5, na.rm = TRUE),
+    canasta_max_media     = mean(canasta_sum_p95, na.rm = TRUE),
     n = n()
   )
 ```
 
 ```{r}
 # Distribución del margen por grupo CANASTA 05
-ggplot(resumen_canasta05_tot, aes(x = factor(formal), y = margen_sum_pct, fill = factor(formal))) +
+ggplot(resumen_canasta05_tot, aes(x = factor(formal), y = margen_relativo_pct_p, fill = factor(formal))) +
   geom_boxplot(alpha = 0.6) +
   geom_jitter(width = 0.1, size = 2, alpha = 0.7) +
   scale_x_discrete(labels = c("0" = "Formal", "1" = "Informal")) +
@@ -1596,7 +1672,7 @@ ggplot(resumen_canasta05_tot, aes(x = factor(formal), y = margen_sum_pct, fill =
 
 ```{r}
 # Distribución del margen por grupo CANASTA 10
-ggplot(resumen_canasta10_tot, aes(x = factor(formal), y = margen_sum_pct, fill = factor(formal))) +
+ggplot(resumen_canasta10_tot, aes(x = factor(formal), y = margen_relativo_pct_p, fill = factor(formal))) +
   geom_boxplot(alpha = 0.6) +
   geom_jitter(width = 0.1, size = 2, alpha = 0.7) +
   scale_x_discrete(labels = c("0" = "Formal", "1" = "Informal")) +
