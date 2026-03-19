@@ -436,7 +436,7 @@ leaflet(st_zm(sectores_prox)) %>%
               opacity = 0.3,
               fillColor = ~pal(sector),
               fillOpacity = 0.5,
-              popup = ~paste("<strong> ID: </strong>", id,"<br><strong>DENSIDAD VIVIENDAS:</strong>", densidad_viviendas,"<br><strong>FORMAL:</strong>", formal,"<br><strong>sector:</strong>", sector),
+              popup = ~paste("<strong> ID: </strong>", id,"<br><strong>DENSIDAD VIVIENDAS:</strong>", densidad_viviendas,"<br><strong>FORMAL:</strong>", formal,"<br><strong>Sector:</strong>", sector),
               group = "Sectores Proximos") 
 
 mapa
@@ -512,7 +512,8 @@ puntos_aleatorios_sp = st_read("data/puntos_aleatorios_sp.geojson") %>%
 
 # PUNTOS ALEATORIOS TOT --------------------------------------------------------
 puntos_aleatorios_tot = rbind(puntos_aleatorios_bm,puntos_aleatorios_sp)%>% 
-  st_transform(4326)
+  st_transform(4326) %>% 
+  mutate(sector_formal = if_else(sector == "0", "Barrio Mugica", paste0("Sector Próximo ", sector)))
                     
 ```
 
@@ -894,7 +895,7 @@ comercios_bm = st_read("data/comercios_bm.gpkg") %>%
 ```
 ## Comercios SP
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
-# HAGO TODO ESTO UNA SOLA VEZ PARA AGILIZAR ------------------------------------------
+# SECTORES PROXIMOS
 
 comercios_sp = read_excel("data/comercios_territorio_sp.xlsx", 
                            sheet = "datos_limpios") %>%
@@ -910,7 +911,8 @@ comercios_sp = comercios_sp %>%
                 st_as_sf(crs = 4326) %>% 
                 st_transform(22185)
 
-comercios_tot = bind_rows(comercios_sp, comercios_bm)
+comercios_tot = bind_rows(comercios_sp, comercios_bm) %>% 
+  select(-c(fecha_hora_cest,marca_temp_cest,link,calle,altura,direccion,cuales_son_los_principales_factores_que_encarecen_los_productos_que_vendes,dificultades_para_abastecerse_otros_comentarios,relevado,numero_real))
 ```
 
 </details>
@@ -986,6 +988,7 @@ leaflet(st_zm(sectores_prox)) %>%
               weight = 0.6,
               opacity = 0.7,
               fillColor = ~pal(sector),
+              popup = ~paste("<strong>ID:</strong>", id_punto),
               fillOpacity = 0.4,
               group = "Isocronas Sector 4") %>%  
 
@@ -1014,7 +1017,7 @@ leaflet(st_zm(sectores_prox)) %>%
               color = "#f6b26b",
               fillOpacity = 1,
               radius = 2,
-              popup = ~paste("<strong>ID:</strong>", id_comercio, "</br> <strong>RUBRO:</strong>", rubro, "</br><strong>CADENA:</strong>", cadena, "</br><strong>RELEVADO:</strong>", relevado, "</br><strong>DIRECCION:</strong>", id_direcciones ),
+              popup = ~paste("<strong>ID:</strong>", id_comercio, "</br> <strong>RUBRO:</strong>", rubro, "</br><strong>CADENA:</strong>", cadena, "</br><strong>RELEVADO:</strong>", id_direcciones ),
               group = "Comercios")
 
 
@@ -1023,6 +1026,79 @@ mapa
 
 transformar_todo_a_crs(22185)
 ```
+
+<details><summary> Código </summary>
+## Comercios por isocrona
+```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
+
+# COMERCIOS POR ISOCRONA
+comercios_iso = st_join(comercios_tot, isocronas05_tot, join = st_within) 
+
+comercios_iso_sum = comercios_iso %>% 
+  group_by(sector,id_punto) %>% 
+  summarise('Numero de comercios' = n(),
+    'Comercios cadena'    = sum(cadena == "si", na.rm = TRUE),
+    'Comercios no cadena' = sum(cadena == "no", na.rm = TRUE)) %>% 
+  st_drop_geometry()
+
+# Pasar a formato long
+comercios_long <- comercios_iso_sum %>%
+  pivot_longer(
+    cols = c('Comercios cadena', 'Comercios no cadena'),
+    names_to = "cadena",
+    values_to = "n_comercios"
+  ) %>%
+  mutate(
+    sector = as.factor(sector),
+    cadena = recode(cadena,
+                    "comercios_cadena"    = "Cadena",
+                    "comercios_no_cadena" = "No cadena")
+  )
+```
+</details>
+
+
+```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
+tabla =
+datatable(comercios_iso_sum, 
+  style = 'bootstrap', 
+  class = 'cell-border stripe',
+  options = list(
+    searching = FALSE,
+    rownames = FALSE,
+    pageLength = -1,
+    dom = 't',
+    scrollY = '300px',
+    language = list(zeroRecords = "No existen datos para los requerimientos seleccionados"),
+    columnDefs = list(
+      list(targets = 0, visible = FALSE), # hide column 0
+      list(targets = c(1,2), width = '150px', className = 'dt-left'))
+    )
+  )
+
+tabla
+
+```
+
+```{r, echo=FALSE, out.width='75%', fig.align='left', out.height=600}
+
+ggplot(comercios_long, aes(x = n_comercios, y = sector, fill = cadena)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.8) +
+  scale_fill_brewer(palette = "Accent") +
+  labs(
+    x = "Sector",
+    y = "Cantidad de comercios",
+    fill = "Tipo"
+  ) +
+  theme_minimal(base_size = 14) +
+  scale_x_continuous(limits = c(0, 120), breaks = seq(0, 120, by = 10))+
+  theme(
+    legend.position = "bottom",
+    plot.title = element_blank(),
+    axis.text.y = element_text(size = 10)
+  )
+```
+
 
 <h2>
   SUB-CANASTA </br>
