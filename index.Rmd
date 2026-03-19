@@ -1618,10 +1618,10 @@ Para complementar, se realiza un test estadístico simple:
 ```{r}
 # CANASTA 05
 # Test de diferencia de medias
-t.test(margen_sum_pct ~ formal, data = resumen_canasta05_tot)
+t.test(margen_relativo_pct_p ~ formal, data = resumen_canasta05_tot)
 
 # O con Wilcoxon si la distribución no es normal
-wilcox.test(margen_sum_pct ~ formal, data = resumen_canasta05_tot)
+wilcox.test(margen_relativo_pct_p ~ formal, data = resumen_canasta05_tot)
 ```
 
 ```{r}
@@ -1754,7 +1754,6 @@ leaflet(st_zm(sectores_prox)) %>%
               popup = ~paste("<strong>ID Punto:</strong>", id_punto,
                              "</br> <strong>Sub-canasta Min:</strong>", precio_canasta_min,
                              "</br> <strong>Sub-canasta Max:</strong>", precio_canasta_max,
-                             "</br> <strong>Productos Cubiertos:</strong>", n_productos_cubiertos,
                              "</br> <strong>Productos Faltantes:</strong>", productos_faltantes,
                              "</br> <strong>N Locales:</strong>", n_locales_necesarios),
               radius = 2,
@@ -1822,7 +1821,6 @@ leaflet(st_zm(sectores_prox)) %>%
               popup = ~paste("<strong>ID Punto:</strong>", id_punto,
                              "</br> <strong>Sub-canasta Min:</strong>", precio_canasta_min,
                              "</br> <strong>Sub-canasta Max:</strong>", precio_canasta_max,
-                             "</br> <strong>Productos Cubiertos:</strong>", n_productos_cubiertos,
                              "</br> <strong>Productos Faltantes:</strong>", productos_faltantes,
                              "</br> <strong>N Locales:</strong>", n_locales_necesarios),
               radius = 2,
