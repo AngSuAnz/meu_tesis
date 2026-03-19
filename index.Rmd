@@ -1097,7 +1097,7 @@ tabla
 
 Gráfico 1. Cantidad de comercios (cadena y no cadenas) por isocrona de 5min por sector.
 
-```{r, echo=FALSE, out.width='75%', fig.align='left', out.height=600}
+```{r, echo=FALSE, out.width='90%', fig.align='left', out.height=400}
 
 ggplot(comercios_long, aes(x = n_comercios, y = `Nombre Sector`, fill = cadena)) +
   geom_boxplot(outlier.shape = NA, alpha = 0.8) +
@@ -1172,7 +1172,7 @@ tabla
 
 Gráfico 1. Cantidad de comercios (cadena y no cadenas) por isocrona de 10min por sector.
 
-```{r, echo=FALSE, out.width='75%', fig.align='left', out.height=600}
+```{r, echo=FALSE, out.width='90%', fig.align='left', out.height=400}
 
 ggplot(comercios_long, aes(x = n_comercios, y = `Nombre Sector`, fill = cadena)) +
   geom_boxplot(outlier.shape = NA, alpha = 0.8) +
@@ -1234,9 +1234,9 @@ tabla = datatable(
   options = list(
     searching = FALSE,
     rownames = FALSE,
-    pageLength = -1,
+    pageLength = 6,
     dom = 't',
-    scrollY = '300px',
+    scrollY = '200px',
     language = list(zeroRecords = "No existen datos para los requerimientos seleccionados"),
     columnDefs = list(
       list(targets = 0, visible = FALSE),
@@ -1305,7 +1305,7 @@ productos_tot = comercios_tot %>%
 
 
 
-```{r, echo=FALSE, out.width='75%', fig.align='left', out.height=600}
+```{r, echo=FALSE, out.width='90%', fig.align='left', out.height=400}
 
 ggplot(productos_tot, aes(x = precio, y = producto, fill = formal)) +
   geom_boxplot(outlier.shape = NA, alpha = 0.8) +
