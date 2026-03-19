@@ -551,8 +551,18 @@ isocronas05_sp = st_read("data/isocronas05_sp.geojson")%>%
 isocronas05_tot = bind_rows(isocronas05_bm,isocronas05_sp) %>% 
   select(sector,id_punto)
 
+isocronas05_tot = left_join(isocronas05_tot,
+                            puntos_aleatorios_tot %>%
+                              select(id_punto,sector_formal) %>% 
+                              st_drop_geometry())
+
 isocronas10_tot = bind_rows(isocronas10_bm,isocronas10_sp) %>% 
   select(sector,id_punto)
+
+isocronas10_tot = left_join(isocronas10_tot,
+                            puntos_aleatorios_tot %>%
+                              select(id_punto,sector_formal) %>% 
+                              st_drop_geometry())
 ```
 
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
@@ -1028,39 +1038,42 @@ transformar_todo_a_crs(22185)
 ```
 
 <details><summary> Código </summary>
-## Comercios por isocrona
+## Comercios por isocrona 5min
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 
 # COMERCIOS POR ISOCRONA
-comercios_iso = st_join(comercios_tot, isocronas05_tot, join = st_within) 
+comercios_iso = st_join(comercios_tot, isocronas05_tot, join = st_within) %>%
+  filter(!is.na(id_punto)) 
 
 comercios_iso_sum = comercios_iso %>% 
-  group_by(sector,id_punto) %>% 
-  summarise('Numero de comercios' = n(),
+  group_by(sector_formal,id_punto) %>% 
+  summarise('Total Comercios' = n(),
     'Comercios cadena'    = sum(cadena == "si", na.rm = TRUE),
     'Comercios no cadena' = sum(cadena == "no", na.rm = TRUE)) %>% 
-  st_drop_geometry()
+  st_drop_geometry() %>% 
+  rename('Nombre Sector' = sector_formal)
 
 # Pasar a formato long
 comercios_long <- comercios_iso_sum %>%
   pivot_longer(
     cols = c('Comercios cadena', 'Comercios no cadena'),
     names_to = "cadena",
-    values_to = "n_comercios"
+    values_to = "n_comercios"          # comillas, no backticks
   ) %>%
   mutate(
-    sector = as.factor(sector),
+    `Nombre Sector` = as.factor(`Nombre Sector`),
     cadena = recode(cadena,
-                    "comercios_cadena"    = "Cadena",
-                    "comercios_no_cadena" = "No cadena")
+                    "Comercios cadena"    = "Cadena",      # debe coincidir exacto
+                    "Comercios no cadena" = "No cadena")
   )
 ```
 </details>
 
+Tabla 1. Cantidad de comercios comprendidos dentro de las isocronas de 5min por sector.
 
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
-tabla =
-datatable(comercios_iso_sum, 
+tabla = datatable(
+  comercios_iso_sum, 
   style = 'bootstrap', 
   class = 'cell-border stripe',
   options = list(
@@ -1071,27 +1084,27 @@ datatable(comercios_iso_sum,
     scrollY = '300px',
     language = list(zeroRecords = "No existen datos para los requerimientos seleccionados"),
     columnDefs = list(
-      list(targets = 0, visible = FALSE), # hide column 0
-      list(targets = c(1,2), width = '150px', className = 'dt-left'))
+      list(targets = 0, visible = FALSE),
+      list(targets = c(1,2), width = '150px', className = 'dt-left')
     )
   )
+)
 
 tabla
 
 ```
 
+Gráfico 1. Cantidad de comercios (cadena y no cadenas) por isocrona de 5min por sector.
+
 ```{r, echo=FALSE, out.width='75%', fig.align='left', out.height=600}
 
-ggplot(comercios_long, aes(x = n_comercios, y = sector, fill = cadena)) +
+ggplot(comercios_long, aes(x = n_comercios, y = `Nombre Sector`, fill = cadena)) +
   geom_boxplot(outlier.shape = NA, alpha = 0.8) +
   scale_fill_brewer(palette = "Accent") +
-  labs(
-    x = "Sector",
-    y = "Cantidad de comercios",
-    fill = "Tipo"
-  ) +
+  labs(x = "Cantidad de comercios por isocrona", y = "Sector", fill = "Tipo") +
   theme_minimal(base_size = 14) +
-  scale_x_continuous(limits = c(0, 120), breaks = seq(0, 120, by = 10))+
+  theme_minimal(base_size = 14) +
+  scale_x_continuous(limits = c(0, 110), breaks = seq(0, 110, by = 10))+
   theme(
     legend.position = "bottom",
     plot.title = element_blank(),
@@ -1099,6 +1112,80 @@ ggplot(comercios_long, aes(x = n_comercios, y = sector, fill = cadena)) +
   )
 ```
 
+<details><summary> Código </summary>
+## Comercios por isocrona 10min
+```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
+
+# COMERCIOS POR ISOCRONA
+comercios_iso = st_join(comercios_tot, isocronas10_tot, join = st_within) %>%
+  filter(!is.na(id_punto)) 
+
+comercios_iso_sum = comercios_iso %>% 
+  group_by(sector_formal,id_punto) %>% 
+  summarise('Total Comercios' = n(),
+    'Comercios cadena'    = sum(cadena == "si", na.rm = TRUE),
+    'Comercios no cadena' = sum(cadena == "no", na.rm = TRUE)) %>% 
+  st_drop_geometry() %>% 
+  rename('Nombre Sector' = sector_formal)
+
+# Pasar a formato long
+comercios_long <- comercios_iso_sum %>%
+  pivot_longer(
+    cols = c('Comercios cadena', 'Comercios no cadena'),
+    names_to = "cadena",
+    values_to = "n_comercios"          # comillas, no backticks
+  ) %>%
+  mutate(
+    `Nombre Sector` = as.factor(`Nombre Sector`),
+    cadena = recode(cadena,
+                    "Comercios cadena"    = "Cadena",      # debe coincidir exacto
+                    "Comercios no cadena" = "No cadena")
+  )
+```
+</details>
+
+Tabla 1. Cantidad de comercios comprendidos dentro de las isocronas de 10min por sector.
+
+```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
+tabla = datatable(
+  comercios_iso_sum, 
+  style = 'bootstrap', 
+  class = 'cell-border stripe',
+  options = list(
+    searching = FALSE,
+    rownames = FALSE,
+    pageLength = -1,
+    dom = 't',
+    scrollY = '300px',
+    language = list(zeroRecords = "No existen datos para los requerimientos seleccionados"),
+    columnDefs = list(
+      list(targets = 0, visible = FALSE),
+      list(targets = c(1,2), width = '150px', className = 'dt-left')
+    )
+  )
+)
+
+tabla
+
+```
+
+Gráfico 1. Cantidad de comercios (cadena y no cadenas) por isocrona de 10min por sector.
+
+```{r, echo=FALSE, out.width='75%', fig.align='left', out.height=600}
+
+ggplot(comercios_long, aes(x = n_comercios, y = `Nombre Sector`, fill = cadena)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.8) +
+  scale_fill_brewer(palette = "Accent") +
+  labs(x = "Cantidad de comercios por isocrona", y = "Sector", fill = "Tipo") +
+  theme_minimal(base_size = 14) +
+  theme_minimal(base_size = 14) +
+  scale_x_continuous(limits = c(0, 370), breaks = seq(0, 370, by = 50))+
+  theme(
+    legend.position = "bottom",
+    plot.title = element_blank(),
+    axis.text.y = element_text(size = 10)
+  )
+```
 
 <h2>
   SUB-CANASTA </br>
