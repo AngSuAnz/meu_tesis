@@ -1100,7 +1100,7 @@ censo2010 = st_read("data/informacion_censal_por_radio_2010_wgs84.geojson") %>%
 
 # Interpolación areal ponderada por área
 radios_2022_con_nbi = aw_interpolate(
-  .data      = radios_tot,
+  .data      = radios_censales_tot,
   tid        = cod_indec,
   source     = censo2010,
   sid        = id,
