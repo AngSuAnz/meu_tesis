@@ -4,6 +4,7 @@
 #(install.packages("renv"))
 #renv::restore()
 
+
 if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
 if (!file.exists("renv.lock")) renv::init()
 
@@ -27,17 +28,20 @@ paquetes=(c("areal",
             "lwgeom",
             "maptools",
             "openxlsx",
+            "openrouteservice",
             "osmdata",
             "osrm",
             "plotly",
             "purrr",
             "RColorBrewer",
+            "Rcpp",
             "readxl",
             "readr",
             "rgdal",
             "rgeos",
             "rmarkdown",
             "rsconnect",
+            "Rcpp",
             "scales",
             "sf",
             "sodium",
