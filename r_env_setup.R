@@ -4,7 +4,6 @@
 #(install.packages("renv"))
 #renv::restore()
 
-
 if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
 if (!file.exists("renv.lock")) renv::init()
 
@@ -20,6 +19,7 @@ paquetes=(c("areal",
             "ggplot2",
             "googlesheets4",
             "installr",
+            "haven",
             "janitor",
             "knitr",
             "leaflet",

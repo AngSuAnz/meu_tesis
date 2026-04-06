@@ -354,14 +354,14 @@ sectores_tot = radios_censales_tot %>%
   rename("geometry" = geometry_radio)
 
 
-#ISOCRONAS SECTORES PROXIMOS
+#CONTORNO SECTORES PROXIMOS
 contorno_sp = sectores_tot %>% 
   filter(sector!="0") %>% 
   group_by(sector) %>% 
   summarise(area_km2_s)
 
 #ELIMINO BASES EN DESUSO
-#rm(radios_buffer, radios_viviendas, viviendas, b_buffer)
+rm(radios_buffer, radios_viviendas, viviendas, b_buffer)
 ```
 </details>
 
@@ -435,14 +435,18 @@ Para estudiar el acceso que tiene la población a los locales comerciales de ven
 #GENERO Y GUARDO LOS PTOS ALEATORIOS PORQUE SINO CADA VEZ QUE CORRO EL CODIGO, SON NUEVOS:
 #puntos_aleatorios_tot = sectores_tot %>%
 #  rowwise() %>%
-#  mutate(puntos = list(st_sample(geometry, size = 100, type = "random"))) %>%
+#  mutate(puntos = list(
+#    st_sample(geometry, size = 100, type = "random") %>%
+#      st_as_sf()
+#  )) %>%
 #  ungroup() %>%
-#  select(-geometry) %>%  # elimina la geometría original
 #  unnest(puntos) %>%
-#  st_as_sf(coords = "puntos", crs = st_crs(sectores_tot)) %>% 
+#  st_as_sf(crs = st_crs(sectores_tot)) %>%
+#  mutate(id_punto = paste0(sector, "_", row_number())) %>%
 #  st_drop_geometry() %>% 
-#  rename("geometry"="puntos") %>% 
-#  mutate(id_punto = paste0(sector,"_",row_number()))
+#  rename("geometry" = x) %>% 
+#  st_as_sf(sf_column_name = "geometry", crs = st_crs(sectores_tot))
+  
 
 #GUARDO LOS PUNTOS PARA LLAMARLOS DESPUES:
 #st_write(puntos_aleatorios_tot, "data/puntos_aleatorios_tot.geojson")
@@ -521,7 +525,7 @@ isocronas10_tot = st_read("data/isocronas10_tot.geojson")%>%
   
 </details>
 
-Imagen 6. Isocronas de 5 minutos a pie desde los puntos aleatotios dentro del Barrio Mugica y de cada uno de los 4 sectores próximos.
+Imagen 6. Isocronas de 5 minutos a pie desde los puntos aleatotios dentro del Barrio Mugica y de cada uno de los 3 sectores próximos.
 
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 
@@ -537,7 +541,7 @@ leaflet(st_zm(sectores_tot)) %>%
     baseGroups = c("OSM","Satelite"), 
     overlayGroups = c("Isocronas Barrio Mugica","Barrio Mugica", "Puntos Aleatorios BM", "Isocronas Sector 1", "Isocronas Sector 2", "Isocronas Sector 3", "Isocronas Sector 4", "Sectores Proximos", "Puntos Aleatorios SP"))%>% 
   
-  addPolygons(data= isocronas05_tot,
+  addPolygons(data= isocronas05_tot%>% filter(sector=="0"),
               color = "#a64d79",
               weight = 1,
               opacity = 0.7,
@@ -546,7 +550,7 @@ leaflet(st_zm(sectores_tot)) %>%
               group = "Isocronas Barrio Mugica") %>%
   
 
-  addPolygons(data= b_mugica,
+  addPolygons(data= sectores_tot %>% filter(sector=="0"),
               color = "black",
               weight = 1,
               opacity = 0.7,
@@ -616,7 +620,8 @@ mapa
 
 ```
 
-Imagen 6. Isocronas de 10 minutos a pie desde los puntos aleatorios dentro del Barrio Mugica y de cada uno de los 4 sectores próximos.
+
+Imagen 6. Isocronas de 10 minutos a pie desde los puntos aleatorios dentro del Barrio Mugica y de cada uno de los 3 sectores próximos.
 
 ```{r, echo=FALSE, out.width='100%', fig.align='left', fig.height = 6}
 
@@ -639,7 +644,7 @@ leaflet(st_zm(sectores_tot)) %>%
               group = "Isocronas Barrio Mugica") %>%
   
 
-  addPolygons(data= b_mugica,
+  addPolygons(data= isocronas05_tot%>% filter(sector=="0"),
               color = "black",
               weight = 1,
               opacity = 0.7,
@@ -852,7 +857,7 @@ leaflet(st_zm(sectores_tot)) %>%
   
 
 
-  addPolygons(data= b_mugica,
+  addPolygons(data= isocronas05_tot%>% filter(sector=="0"),
               color = "black",
               weight = 1,
               opacity = 0.7,
@@ -1620,7 +1625,7 @@ leaflet(st_zm(sectores_tot)) %>%
   
 
 
-  addPolygons(data= b_mugica,
+  addPolygons(data= isocronas05_tot%>% filter(sector=="0"),
               color = "black",
               weight = 1,
               opacity = 0.7,
@@ -1687,7 +1692,7 @@ leaflet(st_zm(sectores_tot)) %>%
   
 
 
-  addPolygons(data= b_mugica,
+  addPolygons(data= isocronas05_tot%>% filter(sector=="0"),
               color = "black",
               weight = 1,
               opacity = 0.7,
@@ -1918,7 +1923,7 @@ leaflet(st_zm(sectores_tot)) %>%
   
 
 
-  addPolygons(data= b_mugica,
+  addPolygons(data= isocronas05_tot%>% filter(sector=="0"),
               color = "black",
               weight = 1,
               opacity = 0.7,
